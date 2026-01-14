@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1768411948.53963 "367_SP26_Syllabus.tex" "367_SP26_Syllabus.pdf" "367_SP26_Syllabus" 1768411949.29479 0
+["pdflatex"] 1768414282.20997 "367_SP26_Syllabus.tex" "367_SP26_Syllabus.pdf" "367_SP26_Syllabus" 1768414282.97805 0
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
@@ -83,9 +83,9 @@
   "/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1740601491 5467155 84b148c4abb69b79980562874e6b5169 ""
   "/usr/local/texlive/2024/texmf-var/web2c/pdftex/pdflatex.fmt" 1740601552 3352640 d778fa6236fcc17d9fb03e3477263f66 ""
   "/usr/local/texlive/2024/texmf.cnf" 1710266656 577 e590dabc9e28c5b61546e15f63eebcdf ""
-  "367_SP26_Syllabus.aux" 1768411949.2242 292 7721ff8d4552499746c3a4de62cab941 "pdflatex"
-  "367_SP26_Syllabus.out" 1768411949.01746 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "367_SP26_Syllabus.tex" 1768411948.11489 24576 cea0775cf7d611f7372134007dd98216 ""
+  "367_SP26_Syllabus.aux" 1768414282.86458 292 7721ff8d4552499746c3a4de62cab941 "pdflatex"
+  "367_SP26_Syllabus.out" 1768414282.67062 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "367_SP26_Syllabus.tex" 1768414280.71078 24643 1a49f380ed81a41edcf3b78d675387f2 ""
   (generated)
   "367_SP26_Syllabus.aux"
   "367_SP26_Syllabus.log"
