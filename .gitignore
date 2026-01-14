@@ -42,7 +42,7 @@
 
 # You might want to ignore the final PDF or PS files, which are compiled outputs
 # If you want to track your compiled PDF, remove the next line.
-*.pdf
+#*.pdf
 *.ps
 *.eps
 
