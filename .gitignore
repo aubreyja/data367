@@ -1,5 +1,8 @@
 # Core latex/pdflatex auxiliary files
 *.aux
+*.swp
+*.synctex.gz
+*.fdb_latexmk
 *.lof
 *.log
 *.lot
