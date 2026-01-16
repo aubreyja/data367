@@ -305,7 +305,7 @@ When you run this command, Git prints output indicating what it is doing. You se
 
 This message indicates that Git has created a new directory named \`analysis\` and downloaded the contents of the repository into that directory. By default, Git uses the name of the repository for the folder.
 
-## Getting work from your computer to GitHub (command line)
+## Using the command line to get work from your computer to GitHub
 
 After you clone a repository and make changes to files on your computer, you must send those changes back to GitHub. This process always follows the same three steps:
 
@@ -319,7 +319,7 @@ These steps must be done in this order.
 
 After editing files, Git notices the changes but does not automatically include them in the next commit. The command `git add` tells Git which changes you want to save.
 
-To stage all changed files at once, run:
+To stage all changed files at once on the command line, from within your working directory run:
 
 ``` bash
 git add .
@@ -327,13 +327,13 @@ git add .
 
 ### Step 2: `git commit` — save a checkpoint
 
-A **commit** saves a snapshot of the staged changes and records them in the repository history.
+A **commit** saves a snapshot of the staged changes and records them in the repository history. After staging files as described above, run:
 
 ``` bash
 git commit -m "Describe what you changed"
 ```
 
-After this step, your changes are saved in Git, but only on your computer.
+After this step, your changes are saved in Git, **but only on your computer**.
 
 ### Step 3: `git push` — upload your work to GitHub
 
@@ -351,7 +351,7 @@ For GitHub Classroom assignments, **pushing your work is how you submit it**.
 
 ------------------------------------------------------------------------
 
-## Getting work from your computer to GitHub (Positron)
+## Getting work from your computer to GitHub from Positron
 
 You can perform the same workflow using Positron’s graphical interface, without typing Git commands directly.
 

@@ -113,13 +113,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#initializing-a-git-repo-in-an-existing-folder" id="toc-initializing-a-git-repo-in-an-existing-folder" class="nav-link" data-scroll-target="#initializing-a-git-repo-in-an-existing-folder">Initializing A Git Repo In An Existing Folder</a></li>
   <li><a href="#cloning-an-existing-repository-from-github" id="toc-cloning-an-existing-repository-from-github" class="nav-link" data-scroll-target="#cloning-an-existing-repository-from-github">Cloning an existing repository from GitHub</a></li>
   </ul></li>
-  <li><a href="#getting-work-from-your-computer-to-github-command-line" id="toc-getting-work-from-your-computer-to-github-command-line" class="nav-link" data-scroll-target="#getting-work-from-your-computer-to-github-command-line">Getting work from your computer to GitHub (command line)</a>
+  <li><a href="#using-the-command-line-to-get-work-from-your-computer-to-github" id="toc-using-the-command-line-to-get-work-from-your-computer-to-github" class="nav-link" data-scroll-target="#using-the-command-line-to-get-work-from-your-computer-to-github">Using the command line to get work from your computer to GitHub</a>
   <ul class="collapse">
   <li><a href="#step-1-git-add-select-changes-to-save" id="toc-step-1-git-add-select-changes-to-save" class="nav-link" data-scroll-target="#step-1-git-add-select-changes-to-save">Step 1: <code>git add</code> — select changes to save</a></li>
   <li><a href="#step-2-git-commit-save-a-checkpoint" id="toc-step-2-git-commit-save-a-checkpoint" class="nav-link" data-scroll-target="#step-2-git-commit-save-a-checkpoint">Step 2: <code>git commit</code> — save a checkpoint</a></li>
   <li><a href="#step-3-git-push-upload-your-work-to-github" id="toc-step-3-git-push-upload-your-work-to-github" class="nav-link" data-scroll-target="#step-3-git-push-upload-your-work-to-github">Step 3: <code>git push</code> — upload your work to GitHub</a></li>
   </ul></li>
-  <li><a href="#getting-work-from-your-computer-to-github-positron" id="toc-getting-work-from-your-computer-to-github-positron" class="nav-link" data-scroll-target="#getting-work-from-your-computer-to-github-positron">Getting work from your computer to GitHub (Positron)</a>
+  <li><a href="#getting-work-from-your-computer-to-github-from-positron" id="toc-getting-work-from-your-computer-to-github-from-positron" class="nav-link" data-scroll-target="#getting-work-from-your-computer-to-github-from-positron">Getting work from your computer to GitHub from Positron</a>
   <ul class="collapse">
   <li><a href="#step-1-open-the-source-control-panel" id="toc-step-1-open-the-source-control-panel" class="nav-link" data-scroll-target="#step-1-open-the-source-control-panel">Step 1: Open the Source Control panel</a></li>
   <li><a href="#step-2-stage-changes" id="toc-step-2-stage-changes" class="nav-link" data-scroll-target="#step-2-stage-changes">Step 2: Stage changes</a></li>
@@ -414,8 +414,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This message indicates that Git has created a new directory named `analysis` and downloaded the contents of the repository into that directory. By default, Git uses the name of the repository for the folder.</p>
 </section>
 </section>
-<section id="getting-work-from-your-computer-to-github-command-line" class="level2">
-<h2 class="anchored" data-anchor-id="getting-work-from-your-computer-to-github-command-line">Getting work from your computer to GitHub (command line)</h2>
+<section id="using-the-command-line-to-get-work-from-your-computer-to-github" class="level2">
+<h2 class="anchored" data-anchor-id="using-the-command-line-to-get-work-from-your-computer-to-github">Using the command line to get work from your computer to GitHub</h2>
 <p>After you clone a repository and make changes to files on your computer, you must send those changes back to GitHub. This process always follows the same three steps:</p>
 <ol type="1">
 <li><strong>add</strong></li>
@@ -426,14 +426,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="step-1-git-add-select-changes-to-save" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-git-add-select-changes-to-save">Step 1: <code>git add</code> — select changes to save</h3>
 <p>After editing files, Git notices the changes but does not automatically include them in the next commit. The command <code>git add</code> tells Git which changes you want to save.</p>
-<p>To stage all changed files at once, run:</p>
+<p>To stage all changed files at once on the command line, from within your working directory run:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="step-2-git-commit-save-a-checkpoint" class="level3">
 <h3 class="anchored" data-anchor-id="step-2-git-commit-save-a-checkpoint">Step 2: <code>git commit</code> — save a checkpoint</h3>
-<p>A <strong>commit</strong> saves a snapshot of the staged changes and records them in the repository history.</p>
+<p>A <strong>commit</strong> saves a snapshot of the staged changes and records them in the repository history. After staging files as described above, run:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Describe what you changed"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>After this step, your changes are saved in Git, but only on your computer.</p>
+<p>After this step, your changes are saved in Git, <strong>but only on your computer</strong>.</p>
 </section>
 <section id="step-3-git-push-upload-your-work-to-github" class="level3">
 <h3 class="anchored" data-anchor-id="step-3-git-push-upload-your-work-to-github">Step 3: <code>git push</code> — upload your work to GitHub</h3>
@@ -456,8 +456,8 @@ Important
 <hr>
 </section>
 </section>
-<section id="getting-work-from-your-computer-to-github-positron" class="level2">
-<h2 class="anchored" data-anchor-id="getting-work-from-your-computer-to-github-positron">Getting work from your computer to GitHub (Positron)</h2>
+<section id="getting-work-from-your-computer-to-github-from-positron" class="level2">
+<h2 class="anchored" data-anchor-id="getting-work-from-your-computer-to-github-from-positron">Getting work from your computer to GitHub from Positron</h2>
 <p>You can perform the same workflow using Positron’s graphical interface, without typing Git commands directly.</p>
 <section id="step-1-open-the-source-control-panel" class="level3">
 <h3 class="anchored" data-anchor-id="step-1-open-the-source-control-panel">Step 1: Open the Source Control panel</h3>
