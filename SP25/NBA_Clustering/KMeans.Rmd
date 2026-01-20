@@ -1,0 +1,412 @@
+---
+title: "K-Means Clustering"
+output:
+  html_document:
+    df_print: paged
+date: "2024-03-18"
+---
+## K-means Clustering
+
+K-means clustering is an iterative algorithm that partitions a dataset into K clusters by minimizing the within-cluster sum of squares. Here's a brief overview of the algorithm and its formulation:
+
+1. **Initialization**: Randomly select K data points from the dataset as the initial cluster centroids.
+
+2. **Assignment**: Assign each data point to the nearest cluster centroid based on a distance metric, commonly the Euclidean distance.
+
+3. **Update**: Recalculate the cluster centroids by taking the mean of all data points assigned to each cluster.
+
+4. **Iteration**: Repeat steps 2 and 3 until convergence criteria are met, such as no change in cluster assignments or centroids.
+
+**Formulation**:
+
+Let \( X = \{x_1, x_2, ..., x_n\} \) be the dataset with \( n \) data points, where each \( x_i \) is a \( d \)-dimensional feature vector. Let \( C = \{\mu_1, \mu_2, ..., \mu_K\} \) denote the cluster centroids.
+
+The objective function of K-means is to minimize the within-cluster sum of squares, given by:
+
+\[ \sum_{k=1}^{K} \sum_{x_i \in C_k} ||x_i - \mu_k||^2 \]
+
+Where:
+\( C_k \) is the set of data points assigned to cluster \( k \).  
+
+\( || \cdot || \) denotes the Euclidean distance.
+
+The algorithm aims to find the cluster centroids \( \mu_k \) that minimize this objective function.
+
+By iteratively updating cluster assignments and centroids, K-means converges to a locally optimal solution. However, the final solution may depend on the initial centroids, and the algorithm may converge to different solutions for different initializations.
+
+```{r}
+# using code from previous lecture
+
+per_36_2019_all <- read.csv("per_36_min_2019.csv")
+
+per_36_2018_all <- read.csv("per_36_min_2018.csv")
+
+per_game_2019_all <- read.csv("per_game_2019.csv")
+
+per_game_2018_all <- read.csv("per_game_2018.csv")
+
+```
+
+
+Take a subset of the data, we are looking at simpler statistics.
+```{r}
+per_36_2019 <- per_36_2019_all[ ,c("player","age","G","GS","MP","FG_per", "X3P_per", "X2P_per"  ,"FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_36", "team") ]
+
+per_36_2018 <- per_36_2018_all[ ,c("player","age","G","GS","MP","FG_per", "X3P_per", "X2P_per"  ,"FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_36", "team") ]
+
+per_game_2019 <- per_game_2019_all[ ,c("player","age","G","GS","MP","FG_per", "X3P_per", "X2P_per"  ,"FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_G", "team") ]
+
+per_game_2018 <- per_game_2018_all[ ,c("player","age","G","GS","MP","FG_per", "X3P_per", "X2P_per"  ,"FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_G", "team") ]
+
+```
+
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+library(plotly)
+library(gridExtra)
+library(leaps)
+library(psych)
+library(NbClust)
+library(sqldf)
+```
+
+
+
+```{r}
+rm_ind <- which(per_game_2018$MP > quantile(per_game_2018$MP, .10) | per_game_2018$G > 10)
+
+per_game_2018 <- per_game_2018[rm_ind, ]
+per_36_2018 <- per_36_2018[rm_ind, ]
+
+
+```
+
+```{r}
+#scale
+per_game_2018$PTS_per_G_std <- per_game_2018$PTS_per_G/range(per_game_2018$PTS_per_G)[2]
+per_game_2018$AST_std <- per_game_2018$AST/range(per_game_2018$AST)[2]
+per_game_2018$TRB_std <- per_game_2018$TRB/range(per_game_2018$TRB)[2]
+
+
+```
+
+```{r}
+hca.fit <- NbClust(data = per_game_2018[,c('PTS_per_G_std', 'AST_std')],
+				distance = "euclidean", 
+				method = "ward.D",
+				index="all")
+
+#this code chunk gives us our distance matrix
+d.matrix <- dist(x= per_game_2018[,c('PTS_per_G_std', 'AST_std')], method="euclidean")
+#d.matrix
+
+#This chunk fits our model!
+hclust.fit <- hclust(d=d.matrix, method="ward.D")
+#hclust.fit
+
+#this chunk assigns clusters!
+per_game_2018$mem3 <- cutree(hclust.fit, k=3)
+
+c1mean <- c(mean(per_game_2018$PTS_per_G_std[per_game_2018$mem3==1]),
+			mean(per_game_2018$AST_std[per_game_2018$mem3==1])
+			)
+
+c2mean <- c(mean(per_game_2018$PTS_per_G_std[per_game_2018$mem3==2]),
+			mean(per_game_2018$AST_std[per_game_2018$mem3==2])
+			)
+
+c3mean <- c(mean(per_game_2018$PTS_per_G_std[per_game_2018$mem3==3]),
+			mean(per_game_2018$AST_std[per_game_2018$mem3==3])
+			)
+
+
+per_game_2018_centroids <- rbind(c1mean, c2mean, c3mean)
+per_game_2018_centroids
+```
+
+```{r}
+kmeans.fit <- kmeans(x=per_game_2018[ ,c('PTS_per_G_std', 'AST_std')], 
+					centers=per_game_2018_centroids)
+
+```
+
+We then assign the clusters to our players! And graph it!
+```{r}
+per_game_2018$kmem3_num <- kmeans.fit$cluster
+per_game_2018$kmem3 <- factor(kmeans.fit$cluster, labels = c('role', 'elite', 'reserve'))
+
+
+
+
+ggplotly(ggplot(per_game_2018, aes(x=AST, y=PTS_per_G, col = kmem3, text = player)) + geom_point() + labs(x= "Assists Per Game", y = "Points Per Game",title ='2018 Clusters based on Per Game Statistics') + scale_color_manual(values=c("seagreen3", "red", "dodgerblue"))) 
+
+```
+The graph above shows a trend we would expect. The red represents elite offensive players, the green represents intermediate role players and the blue are small role players or deep reserves. Immediately, we saw a major flaw in our procedure, by taking into account assists and points we were largely hurting big men who rarely handle the ball.
+
+
+
+What we were more interested in is if we should be classifying players differently based on their per-36-minute statistics. The below plot assigns the per game statistic cluster to a player on their per-36-minute numbers.
+
+```{r}
+#per_game_2018$kmem3_per_36 <- per_36_2018$kmem3
+#per_36_2018$kmem3_per_game <- per_game_2018$kmem3
+
+
+per_36_2018 <- sqldf(
+  'SELECT p.*, g.kmem3 as kmem3_per_game  
+    FROM per_36_2018 p
+    left join per_game_2018 g 
+    on p.player = g.player'
+)
+per_36_2018 <- per_36_2018[complete.cases(per_36_2018), ]
+```
+
+
+```{r}
+ggplotly(ggplot(per_36_2018, aes(x=AST, y=PTS_per_36, col = kmem3_per_game, text = player)) + geom_point() + labs(x= "Assists Per 36", y = "Points Per 36", title = '2018 Per_game Cluster on per_36_min data') + scale_color_manual(values=c("red", "dodgerblue", "seagreen3")))
+
+```
+
+A simple glance showed there are some players who on a per game basis might be considered low tier but could have potential. We immediately saw the large variation of reserve players. With small minutes, usually when games have already been won or lost, they score quickly as defense lacks. We turned our focus on someone like Dante Exum. Below shows that Dante Exum scored 8.1 points and 3.1 assists in 16.8 minutes of play. If he was able to keep that rate he would be scoring 17.5 points and 6.6 assists in 36 minutes, making his statistics similar to those in the elite cluster. 
+
+```{r}
+per_game_2018[per_game_2018$player == 'Dante Exum', c('player', 'MP','AST', 'PTS_per_G')]
+per_36_2018[per_36_2018$player == 'Dante Exum', c('player','AST', 'PTS_per_36')]
+
+```
+
+Let's try to make up for our big man problem. To do this we added Total Rebounds to the cluster model. We chose total rebounds because the ability to get a defensive rebound contributes to a possession and the ability to score, an offensive rebound gives your team the same opportunity, 1 more possession to try to score. We repeated the steps above with three variables and found 2 clusters was the overwhelming winner as 11 indices picked it as the top option (see below). Even though, we believe this isn't the most practical solution we proceeded out of pure curiosity.
+
+
+```{r}
+hca.fit <- NbClust(data = per_game_2018[,c('PTS_per_G_std', 'AST_std', 'TRB_std')],
+				distance = "euclidean", 
+				method = "ward.D",
+				index="all")
+
+```
+
+```{r}
+d.matrix <- dist(x= per_game_2018[,c('PTS_per_G_std', 'AST_std', 'TRB_std')], method="euclidean")
+#d.matrix
+```
+
+```{r}
+hclust.fit <- hclust(d=d.matrix, method="ward.D")
+#hclust.fit
+```
+
+```{r}
+per_game_2018$mem2 <- cutree(hclust.fit, k=2)
+```
+
+
+```{r}
+c1mean <- c(mean(per_game_2018$PTS_per_G_std[per_game_2018$mem2==1]),
+			mean(per_game_2018$AST_std[per_game_2018$mem2==1]),
+			mean(per_game_2018$TRB_std[per_game_2018$mem2==1])
+			)
+
+c2mean <- c(mean(per_game_2018$PTS_per_G_std[per_game_2018$mem2==2]),
+			mean(per_game_2018$AST_std[per_game_2018$mem2==2]),
+			mean(per_game_2018$TRB_std[per_game_2018$mem2==2])
+			)
+
+per_game_2018_centroids <- rbind(c1mean, c2mean)
+#per_game_2018_centroids
+```
+
+
+```{r}
+kmeans.fit <- kmeans(x=per_game_2018[ ,c('PTS_per_G_std', 'AST_std', 'TRB')], 
+					centers=per_game_2018_centroids)
+
+```
+
+
+```{r}
+per_game_2018$kmem2_num <- kmeans.fit$cluster
+per_game_2018$kmem2 <- factor(kmeans.fit$cluster)
+
+plot_ly(per_game_2018, x = ~AST, y = ~PTS_per_G, z = ~TRB, color = ~kmem2) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'Assist'),
+                     yaxis = list(title = 'PTS_per_G'),
+                     zaxis = list(title = 'TRB')))
+```
+
+
+
+
+
+
+As we can see, adding total rebounds did't help develop our clusters very well. In fact, it punishes players with low rebounds. For example, Demar Derozan who averaged 23 points per game and 5.2 assists was considered elite in the first cluster model but his 3.9 total rebounds a game puts him in the lower of the two groups above. Due to todays game being centered around ablility to space the floor and pass for the open shot, we continued using the original cluster method for 2019 while keeping in mind that it skews big men who do not assist a lot.
+
+
+
+## Repeat the above procedure using 2019 data!! 
+The answers are below but try to do it without them! The answers use four clusters but you can actually use whatever you want! Lastly, try to put the whole activity together by seeing who changed clusters over the two years we analyzed.
+
+
+```{r}
+
+```
+
+
+
+
+## 2019 Answers
+```{r}
+rm_ind <- which(per_game_2019$MP > quantile(per_game_2019$MP, .10) | per_game_2019$G > 10)
+
+per_game_2019 <- per_game_2019[rm_ind, ]
+per_36_2019 <- per_36_2019[rm_ind, ]
+
+
+```
+
+
+```{r}
+per_game_2019$PTS_per_G_std <- per_game_2019$PTS_per_G/range(per_game_2019$PTS_per_G)[2]
+per_game_2019$AST_std <- per_game_2019$AST/range(per_game_2019$AST)[2]
+per_game_2019$TRB_std <- per_game_2019$TRB/range(per_game_2019$TRB)[2]
+
+
+```
+
+The 2019 season model suggested 2 clusters, however, due to practicality we wanted at least 3. 3 and 4 were pretty similar in number of indices that recommend them. We decided to go with four as we hoped that a pure scored cluster would be made.
+
+```{r}
+hca.fit <- NbClust(data = per_game_2019[,c('PTS_per_G_std', 'AST_std')],
+				distance = "euclidean", 
+				method = "ward.D",
+				index="all")
+```
+
+```{r}
+d.matrix <- dist(x= per_game_2019[,c('PTS_per_G_std', 'AST_std')], method="euclidean")
+#d.matrix
+```
+
+```{r}
+hclust.fit <- hclust(d=d.matrix, method="ward.D")
+#hclust.fit
+```
+
+```{r}
+per_game_2019$mem3 <- cutree(hclust.fit, k=4)
+```
+
+```{r}
+c1mean <- c(mean(per_game_2019$PTS_per_G_std[per_game_2019$mem3==1]),
+			mean(per_game_2019$AST_std[per_game_2019$mem3==1])
+			)
+
+c2mean <- c(mean(per_game_2019$PTS_per_G_std[per_game_2019$mem3==2]),
+			mean(per_game_2019$AST_std[per_game_2019$mem3==2])
+			)
+
+c3mean <- c(mean(per_game_2019$PTS_per_G_std[per_game_2019$mem3==3]),
+			mean(per_game_2019$AST_std[per_game_2019$mem3==3])
+			)
+c4mean <- c(mean(per_game_2019$PTS_per_G_std[per_game_2019$mem3==4]),
+			mean(per_game_2019$AST_std[per_game_2019$mem3==4])
+			)
+
+per_game_2019_centroids <- rbind(c1mean, c2mean, c3mean, c4mean)
+#per_game_2019_centroids
+```
+
+
+
+```{r}
+kmeans.fit <- kmeans(x=per_game_2019[ ,c('PTS_per_G_std', 'AST_std')], 
+					centers=per_game_2019_centroids)
+
+```
+
+
+```{r}
+per_game_2019$kmem4_num <- kmeans.fit$cluster
+per_game_2019$kmem4 <- factor(kmeans.fit$cluster, labels = c('elite_offense', 'pure_scorer', 'role', 'reserve'))
+
+
+#ggplot(per_game_2018, aes(x=AST_std, y=PTS_per_G_std, col = kmem3)) + geom_point() + labs(x= #"Standardized Assists Per Game", y = "Standardized Points Per Game")
+
+ggplotly(ggplot(per_game_2019, aes(x=AST, y=PTS_per_G, col = kmem4, text = player)) + geom_point() + labs(x= "Assists Per Game", y = "Points Per Game", title = " 2019 Per game Clusters") + scale_color_manual(values=c("red", "darkorchid3", "seagreen3", "dodgerblue")))
+
+```
+
+Here we put out clusters on the per_36 minute data for 2019
+
+```{r}
+
+per_36_2019 <- sqldf(
+  'SELECT p.*, g.kmem4 as kmem4_per_game  
+    FROM per_36_2019 p
+    left join per_game_2019 g 
+    on p.player = g.player'
+)
+
+per_36_2019 <- per_36_2019[complete.cases(per_36_2019), ]
+
+```
+
+
+```{r}
+ggplotly(ggplot(per_36_2019, aes(x=AST, y=PTS_per_36, col = kmem4_per_game, text = player)) + geom_point() + labs(x= "Assists Per 36", y = "Points Per 36", title = "2019 Per Game Clusters on Per 36 Stats") + scale_color_manual(values=c("red", "darkorchid3", "seagreen3", "dodgerblue")))
+
+```
+
+Here's how to see a player who might be out performing his role!
+
+```{r}
+per_game_2019[per_game_2019$player == 'Antonio Blakeney', c('player', 'G', 'MP','AST', 'PTS_per_G', 'team')]
+per_36_2019[per_36_2019$player == 'Antonio Blakeney', c('player','AST', 'PTS_per_36')]
+
+```
+
+
+
+Last, we wanted to know which players who were role or reserve players last year became pure scorers or elite offensive players this year. We looked at this to see how many players were given extra minutes possibly based on their great performance as a role or reserve.
+
+
+```{r}
+yoy_2018 <- per_game_2018[,c('player', 'MP', 'AST', 'PTS_per_G', 'team',  'kmem3')]
+yoy_2019 <- per_game_2019[,c('player', 'MP', 'AST', 'PTS_per_G', 'team',  'kmem4')]
+
+yoy <- sqldf(
+  'select a.player
+  , a.AST AST_18
+  , b.AST AST_19
+  , a.PTS_per_G PTS_per_G_18
+  , b.PTS_per_G PTS_per_G_19
+  , a.kmem3 clust_18
+  , b.kmem4 clust_19
+  , a.team team_18
+  , b.team team_19
+  , a.MP MP_18
+  , b.MP MP_19
+from yoy_2018 a
+inner join yoy_2019 b
+on a.player = b.player'
+)
+
+
+yoy[(yoy$clust_18 == 'role' |  yoy$clust_18 =='reserve') & (yoy$clust_19 == 'elite_offense' | yoy$clust_19 == 'pure_scorer'), ]
+```
+### Activity for March 20 - Cluster Part 2
+
+Our goal is to practice using clustering to explore trends in data.  
+
+- Decide on a sport your group wishes to investigate.
+- Decide if you want to investigate teams or individuals from that sport.
+- Get data from that sport. (Webscraping or downloading csv files.)
+- Determine two variables that represent the most important attributes of the sport. These could be variables in the data you downloaded or variables you created from the data.
+- Use K-Means Clustering on the teams (or individuals) the sport using a 2d-plot. You will need to determine how many clusters to use. Identify and label the clusters with an appropriate label.
+- Now add a new variable and apply K-Means clustering on the three variables. Make a 3D plot using `plot_ly`. Explain if there is any change in clusters after adding the 3rd variable.
+
+Each group submits one RMD file to 03/20 Activity - Cluster part 2 assignment box in Gradescope. It is due at the end of class on March 20. Be sure to include any csv file your group used.
+
+

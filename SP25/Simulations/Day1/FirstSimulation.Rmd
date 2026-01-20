@@ -1,0 +1,310 @@
+---
+title: "First Simulation"
+author: "Dr. Ekstrom"
+fontsize: 11pt
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+\begin{description}
+\item[Purpose:] Imagine every hitter in a game either hits a homerun (with probability of $p=0.1$)
+or strikes out (with probability $1-p=0.9$), how many runs do we expect the team to score in a nine inning game?
+
+  \begin{description}
+    \item[Sports Analytics:] Estimate the impact of a strategy. 
+    \item[Statistics:] Estimating statistics using a simulation.
+    \item[R:] Simulating in \textit{R} 
+  \end{description}
+\end{description}
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Simulating a Single Inning}
+
+\noindent We will begin by simulating an inning. 
+The key to our simulation is the \texttt{sample()} command. 
+It samples an entry (or multiple entries) from a vector - with the probability of each entry being selected given by a second vector. For example
+```{r}
+# creates a vector for the results of a batter
+# 0 represents a strikeout
+# 1 represents a homerun
+batter=c(0,1)
+# creates a vector that gives the probability of each result
+pr=c(0.9,0.1)
+# samples 1 element from the batter vector based on the probabilities in pr
+sample(batter,1,prob=pr)
+```
+
+The sample command randomly selects an element of the batter vector - where \texttt{0} has a probability of 0.9 of being selected and \texttt{1} has a probability of 0.1 of being selected.
+
+\pagebreak
+
+In simulating an inning,we need to keep track of the number of runs scored, and the number of outs - the third out ends the inning. So a \texttt{while} loop seems appropriate.
+
+```{r}
+# probability of a homerun
+p=0.1
+# creates a vector for the results of a batter
+# 0 represents a strikeout
+# 1 represents a homerun
+batter=c(0,1)
+# creates a vector that gives the probability of each result
+pr=c(1-p,p)
+# keeps track of the number of runs scored
+runs=0
+# keeps track of the number of outs in the inning
+outs=0
+# creates a while loop that continues until 3 outs are recorded
+while(outs<3){
+  # samples 1 element from the batter vector based on the probabilities in pr 
+  atbat=sample(batter,1,prob=pr)
+  # creates an if statement - that adds a run if a homerun, and an out 
+  # if a strikeout
+  if(atbat==1){
+    runs=runs+1
+  } else {
+    outs=outs+1
+  }
+}
+# prints out the number of runs from the inning
+runs
+```
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+\noindent \textsc{Simulating Many Innings}
+
+Once we get the simulation of one inning working, we wrap it in a \texttt{for} loop to simulate as many innings as we would like. 
+We will keep track of the result of each simulated inning in the vector \texttt{output}.
+
+```{r}
+# number of innings to be simulated
+N=100000
+# probability of a homerun
+p=0.1
+# vector to hold the output of each inning
+output=rep(-1,N)
+# creates a vector for the results of a batter
+# 0 represents a strikeout
+# 1 represents a homerun
+batter=c(0,1)
+# creates a vector that gives the probability of each result
+pr=c(1-p,p)
+# creates a for loop to simulate N innings
+for(i in 1:N){
+  # keeps track of the number of runs scored
+  runs=0
+  # keeps track of the number of outs in the inning
+  outs=0
+  # creates a while loop that continues until 3 outs are recorded
+  while(outs<3){
+    # samples 1 element from the batter vector based on the probabilities in pr
+    atbat=sample(batter,1,prob=pr)
+    # creates an if statement - that adds a run if a homerun, and an out 
+    # if a strikeout
+    if(atbat==1){
+      runs=runs+1
+    } else {
+      outs=outs+1
+    }
+  }
+  # stores the output of the inning to the output vector
+  output[i]=runs
+}
+# calculates the average of the output vector
+mean(output)
+```
+
+We see the average per inning after simulating \texttt{N} innings. 
+Multiply this number by 9 to determine the average per game.
+
+```{r}
+9*mean(output)
+```
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+\noindent \textsc{Simulating a Game}
+
+Now imagine you had two teams - one hits a homerun with probability $p_{1}=0.1$ and the second with probability $p_{2}=0.12$.
+If they played a game, we would expect the second team to win. 
+But if they played 100 games against each other, would we expect the second team to win all 100 games?
+If not, how many would we expect them to win?
+We will answer this question by simulating 100 games of such teams.
+
+We start with simulating one game. 
+To make this easier, I am going to create a function, called \texttt{inning}, that simulates a teams at bat (really it should be called half-inning).
+
+
+```{r}
+# creates the function inning:
+# input - probability value p
+# output - number of runs
+inning<-function(p)
+{
+  # keeps track of the number of runs scored
+  runs=0
+  # keeps track of the number of outs in the inning
+  outs=0
+  # creates a vector for the results of a batter
+  # 0 represents a strikeout
+  # 1 represents a homerun
+  batter=c(0,1)
+  # creates a vector that gives the probability of each result
+  pr=c(1-p,p)
+  # creates a while loop based on the number of outs
+  while(outs<3){
+    # samples 1 element from the batter vector based on the probabilities in pr 
+    atbat=sample(batter,1,prob=pr)
+    # creates an if statement - that adds a run if a homerun, and an out 
+    # if a strikeout
+    if(atbat==1){
+      runs=runs+1
+    } else {
+      outs=outs+1
+    }
+  }
+  return(runs)
+}
+
+# probability of a homerun for the first team
+p1=0.1
+# probability of a homerun for the second team
+p2=0.12
+# keeps track of the number of runs scored by the first team
+score1=0
+# keeps track of the number of runs scored by the second team
+score2=0
+# keeps track of the innings of the game
+ginning=1
+# while loop that simulates the game - at least 9 innings and continues 
+# if the game is tied
+while((ginning<=9)|(score1==score2)){
+  # adds to score of team 1 using a function call to inning
+  score1=score1+inning(p1)
+  # adds to score of team 2 using a function call to inning
+  score2=score2+inning(p2)
+  # updates the inning of the game
+  ginning=ginning+1
+}
+score1
+score2
+```
+
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+\noindent \textsc{Simulating Many Games}
+
+Once we get the simulation of one game working, we wrap it in a \texttt{for} loop to simulate as many games as we would like. 
+We will keep track of the result of each simulated game in the vector \texttt{series}.
+
+
+```{r}
+# creates the function inning:
+# input - probability value p
+# output - number of runs
+inning<-function(p)
+{
+  # keeps track of the number of runs scored
+  runs=0
+  # keeps track of the number of outs in the inning
+  outs=0
+  # creates a vector for the results of a batter
+  # 0 represents a strikeout
+  # 1 represents a homerun
+  batter=c(0,1)
+  # creates a vector that gives the probability of each result
+  pr=c(1-p,p)
+  # creates a while loop based on the number of outs
+  while(outs<3){
+    # samples 1 element from the batter vector based on the probabilities in pr 
+    atbat=sample(batter,1,prob=pr)
+    # creates an if statement - that adds a run if a homerun, and an out 
+    # if a strikeout
+    if(atbat==1){
+      runs=runs+1
+    } else {
+      outs=outs+1
+    }
+  }
+  return(runs)
+}
+
+# number of games to be simulated
+games=100
+# vector to hold the output of each game
+series=rep(-1,games)
+# probability of a homerun for the first team
+p1=0.1
+# probability of a homerun for the second team
+p2=0.12
+for(i in 1:games){
+  # keeps track of the number of runs scored by the first team
+  score1=0
+  # keeps track of the number of runs scored by the second team
+  score2=0
+  # keeps track of the innings of the game
+  ginning=1
+  # while loop that simulates the game - at least 9 innings and continues 
+  # if the game is tied
+  while((ginning<=9)|(score1==score2)){
+    # adds to score of team 1 using a function call to inning
+    score1=score1+inning(p1)
+    # adds to score of team 2 using a function call to inning
+    score2=score2+inning(p2)
+    # updates the inning of the game
+    ginning=ginning+1
+  }
+  #print("game")
+  #print(score1)
+  #print(score2)
+  # adds a 0 to the series when team 1 wins and 1 to the series when team 2 wins
+  if(score1<score2){
+    series[i]=1
+  } else {
+    series[i]=0
+  }
+}
+# calculates the average of the output vector
+mean(series)
+```
+
+\pagebreak
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Group Activity - Football Simulation}
+
+\noindent Imagine a football team that gains 5 yards with probability 0.25, 4 yards with probability 0.35, 0 yards with probability 0.3, and -2 yards with probability 0.1. What is the probability they get a first down within 4 plays?
+Write and run a simulation to answer this question.
+
+Submit your RMD file to the appropriate Gradescope assignnment. It is due at the end of class. 
+
+\rule{6.5in}{0.01in}
+
+\noindent \textsc{Group Activity - Basketball Simulation}
+
+\noindent Imagine a team that has a shooting percentage of 52\% for 2-point field goals, and 36\% for 3-point field goals.
+They shoot 3-point field goals on 33\% of their possesions, and 2-point field goals on 67\% of their possessions. 
+
+Now imagine a second team that has the exact same shooting percentage for both 2-point and 3-point field goals, but they shoot 3-point field goals on 43\% of their possesions, and 2-point field goals on 57\% of their possesions. 
+
+If these two teams play, what is the probability that the second team wins?
+Assume that each team gets 100 possessions per game.
+For simplicity, we will allow for ties. 
+
+Does this change if we assume that each team gets 110 possessions per game? If so, by how much?
+
+Write and run a simulation that estimates these probabilities.
+
+\rule{6.5in}{0.01in}
+
+

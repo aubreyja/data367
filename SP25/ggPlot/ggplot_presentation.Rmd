@@ -1,0 +1,217 @@
+---
+title: "ggplot Presentation"
+output:
+  html_document:
+    df_print: paged
+---
+##By: Jason Spector
+
+
+## What is ggplot2
+
+ggplot2 is a data visualization package for the statistical programming language R. Created by Hadley Wickham in 2005 when he was a graduate student at Iowa State, ggplot2 is an implementation of Leland Wilkinson's Grammar of Graphics—a general scheme for data visualization which breaks up graphs into semantic components. 
+[ggplot2]("https://en.wikipedia.org/wiki/Ggplot2")
+
+
+## Basic Grammar Defines Components of Graphics
+
+data: in ggplot2, data must be stored as an R data frame    
+coordinate system: describes 2-D space taht data is projected onto. For example, map projections.    
+**geoms:** describe type of geometric objects that represent data. For example, points, lines, polygons  
+**aesthetics:**  describe visual characteristics that represent data. For example, position, size color, shape, transparency, fill  
+**scales:**  for each aesthetic, describe how visual characteristic is converted to display values. For example, lkog scales, color scales, size scales, shape scales.  
+**stats:**  describe statistical transformations that typically summarize data. For example, counts, means, medians, regression lines.  
+**facets:**  describe how data is split into subsets and displayed as multiple small graphs.  
+
+
+**Hints: You need to add multiple layers one by one based on the ground layer.** 
+
+## Data used in the presentation
+
+```{r, echo = TRUE}
+# Setup
+options(scipen=999)  # turn off scientific notation like 1e+06
+library(ggplot2)
+
+qbs <- read.csv('/Users/jasonspector/OneDrive/Arizona/Spring 2020/sports_stats_lectures/nfl_qbs.csv', stringsAsFactors = FALSE)
+
+(qbs_start <- qbs[(qbs$GS > 0 & qbs$Att >= 200), ])
+mvp <- qbs_start[which(qbs_start$TD >= median(qbs_start$TD)), ]
+```
+
+##Geometric objects
+
+Geometric objects are elements that we mark on the plot. It can be used in ggplot2 to create a line, bar or box chart. For example:
+
+(geom_point) for scatter plots, (geom_line) for time series, trend lines plots, and (geom_boxplot) for boxplots, (geom_histogram) for histograms, (geom_bar) for bar plots.
+
+To generate the plot area we use aes, standing for aesthetics! Notice no data shows up becasue we have not told our ggplot how to we want this plotted.
+```{r}
+# Init ggplot
+ggplot(qbs, aes(x=TD, y=G))  # area and poptotal are columns in 'midwest'
+```
+
+##Bar charts
+
+geom_bar() lets you plot bar charts. The theme function can do many things but for now we are using it to angle the text. This already looks like a lot to remember. When in doubt, google it! There are tons of examples on the internet.
+
+```{r}
+ggplot(data = qbs) + geom_bar(mapping = aes(x = Tm)) + theme(axis.text.x = element_text(angle = 90))
+
+```
+
+On the y-axis count is shown but it is not a variable in the dataset. Many graphs like barcharts, histograms and frequency polygons sort your data by count. 
+
+
+##Positional arguments 
+
+Want to make your graphs more colorful! You can color a bar chart using the fill aesthetic. 
+
+```{r}
+ggplot(data = qbs) + geom_bar(mapping = aes(x = Tm, fill = Lg)) + theme(axis.text.x = element_text(angle = 90))
+```
+
+You can do much more with colors and types of bars but for now we are going to stick to the simple stuff.
+
+## Histogram
+
+### Basic histogram (y axis is count) 
+
+```{r}
+ggplot(midwest, aes(x = area)) + 
+  geom_histogram()
+```
+
+### Basic histigram (y axis is density)
+
+```{r}
+ggplot(qbs, aes(x = G)) + 
+  geom_histogram(aes(y = ..density..), colour = "black", fill = "dodgerblue") +
+  geom_density()
+```
+
+
+##Scatter plot
+
+
+To generate a scatter plot we add geom_point()
+```{r}
+ggplot(qbs, aes(x=G, y=TD)) + geom_point()
+```
+
+If we wanted to add a linear regression line to our graph we use geom_smooth with the method being lm. Notice the grey area around the line, that is our confidence interval. 
+
+```{r}
+ggplot(qbs, aes(x=G, y=TD)) + geom_point() + geom_smooth(method="lm")
+```
+
+We can change the confidence interval by adding confidence level arguement to the geom_smooth.
+```{r}
+ggplot(qbs, aes(x=G, y=TD)) + geom_point() + geom_smooth(method="lm", level = .75)
+
+ggplot(qbs, aes(x=G, y=TD)) + geom_point() + geom_smooth(method="lm", level = .75, se = FALSE)
+```
+
+You can assign a plot to a variable and add to the plot or you can write the whole function.We show this along with creating limits for our graph canvas. Notice that changing the limits will remove values!
+```{r}
+g <- ggplot(qbs, aes(x=G, y=TD)) + geom_point() + geom_smooth(method="lm") 
+
+g + xlim(c(10, 16)) + ylim(c(20, 40))  
+```
+
+To add labels we use labs function with different arguements! 
+
+```{r}
+g + labs(title="Games Vs TDs", subtitle="2019 Season", y="TD", x="G", caption="Quarterback Touchdowns")
+```
+
+We can add mathmatical equations using the quote arguement.
+```{r}
+g +  labs(
+    x = quote(sum(x[i] ^ 2, i == 1, n)),
+    y = quote(alpha + beta + frac(delta, theta))
+  )
+```
+
+
+We can change the color of the points with the col arguement. We use col in geom_point to change the colors of the points and we use col in geom_smooth to change the color of the line. For color options, Google ggplot color options! We can also change the size of the points with the size areguement. Lastly, we can add text with the geom_text arguement. Use vjust or hjust to move the texts around. However, our example below shows why this could be difficult to work with when we have big data. Plotly is a good way to get around this!
+
+```{r}
+ggplot(qbs_start, aes(x=G, y=TD)) + 
+  geom_point(col="dodgerblue", size=3) +   # Set static color and size for points
+  geom_smooth(method="lm", col="red") +    # change the color of line
+  geom_text(aes(label=Player, vjust = -.5))
+```
+
+```{r}
+ggplot(qbs, aes(x=G, y=TD)) + 
+  geom_point(col="darkslateblue", size=1) +   # Set static color and size for points
+  geom_smooth(method="lm", col="orchid4")  # change the color of line
+```
+
+When we use a variable to determine the color we put it in the aes arguement. Look at Tm as our example here. You could also put it in geom_point as geom_point(col=Tm). Change the shape with the shape arguement!
+```{r}
+ggplot(qbs, aes(x=G, y=TD, col = Tm)) + 
+  geom_point(size=3)   # Set static color and size for points
+```
+
+The Brewer palletes are very popular to use. Especially to help control for colorblind people!
+
+```{r}
+library(RColorBrewer)
+head(brewer.pal.info, 10) 
+```
+
+```{r}
+#only 8 unique colors in this set
+g = ggplot(qbs[1:8, ], aes(x=G, y=TD, col = Tm)) + 
+  geom_point(size=3) + scale_colour_brewer(palette = "Set2")
+
+g
+```
+
+Themes can be changed easily by adding a theme arguement at the end! 
+
+```{r}
+g + theme_bw() + labs(subtitle="BW Theme")
+g + theme_classic() + labs(subtitle="Classic Theme")
+g + theme_dark() + labs(subtitle="Dark Theme")
+```
+
+
+##Facets
+
+You can use facets to put multiple graphs in a single output segmented by a variable. You can make your facets into rows or columns or both (however you cannot use the same variable in row and column to make a matrix or combinations)! you can also do notation or <colname> ~ <rowname>
+```{r}
+ggplot(mvp[1:5, ], aes(x=G, y=TD, col = Tm)) + 
+  geom_point(size=2) + facet_grid(rows = vars(Tm)) + theme(legend.position="None")
+
+ggplot(mvp[1:5, ], aes(x=G, y=TD, col = Tm)) + 
+  geom_point(size=2) + facet_grid(cols = vars(Tm)) + theme(legend.position="None")
+
+```
+
+
+##Legend Formatting
+
+A couple extra tips to help make your graphs better. We adjust the legend position using theme().
+```{r}
+base <- ggplot(mvp, aes(G, TD)) +
+  geom_point(aes(colour = Tm))
+
+base + theme(legend.position = "left")
+base + theme(legend.position = "top")
+base + theme(legend.position = "bottom")
+base + theme(legend.position = "right") # the default
+
+```
+
+
+##Plotly
+
+We can use the function ggplotly to turn our ggplots into interactive graphs! This works great for html knits but acts as a static ggplot in a word or pdf document.
+```{r}
+library(plotly)
+ggplotly(ggplot(qbs_start, aes(x=Att, y=TD, col=Tm, text=Player)) + geom_point(size=3))
+```
+

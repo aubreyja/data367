@@ -1,0 +1,342 @@
+---
+title: "Best Predictor"
+by: Tyrus E. Nelson
+output: html_notebook
+---
+
+### Loading Packages
+
+Make sure you have them installed first :) (use install.packages("package_name"))
+
+```{r}
+library(rvest)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+```
+
+###Function 1
+
+I made this function that finds the best predictor for a specific response variable. This function takes in two arguments, your dataframe and your response variable. It can take in both categorical and numerical variables and apply an AIC and R-squared respectively along with transformations.
+
+```{r}
+best_predictor <- function(dataframe, response) {
+  if (sum(sapply(dataframe, function(x) {is.numeric(x) | is.factor(x)})) < ncol(dataframe)) {
+    stop("Make sure that all variables are of class numeric/factor!")
+  }
+  
+  # pre-allocate vectors
+  varname <- c()
+  vartype <- c()
+  R2 <- c()
+  R2_log <- c()
+  R2_quad <- c()
+  AIC <- c()
+  AIC_log <- c()
+  AIC_quad <- c()
+  y <- dataframe[ ,response]
+  
+  # # # # # NUMERIC RESPONSE # # # # #
+  if (is.numeric(y)) {
+    
+    for (i in 1:ncol(dataframe)) {
+      
+      x <- dataframe[ ,i]
+      varname[i] <- names(dataframe)[i]
+      
+      if (class(x) %in% c("numeric", "integer")) {
+        vartype[i] <- "numeric"
+      } else {
+        vartype[i] <- "categorical"
+      }
+      
+      if (!identical(y, x)) {
+        
+        # linear: y ~ x
+        R2[i] <- summary(lm(y ~ x))$r.squared 
+        
+        # log-transform: y ~ log(x)
+        if (is.numeric(x)) { 
+          if (min(x) <= 0) { # if y ~ log(x) for min(x) <= 0, do y ~ log(x + abs(min(x)) + 1)
+            R2_log[i] <- summary(lm(y ~ log(x + abs(min(x)) + 1)))$r.squared
+          } else {
+            R2_log[i] <- summary(lm(y ~ log(x)))$r.squared
+          }
+        } else {
+          R2_log[i] <- NA
+        }
+        
+        # quadratic: y ~ x + x^2
+        if (is.numeric(x)) { 
+          R2_quad[i] <- summary(lm(y ~ x + I(x^2)))$r.squared
+        } else {
+          R2_quad[i] <- NA
+        }
+        
+      } else {
+        R2[i] <- NA
+        R2_log[i] <- NA
+        R2_quad[i] <- NA
+      }
+    }
+    
+    print(paste("Response variable:", response))
+    
+    data.frame(varname, 
+               vartype, 
+               R2 = round(R2, 3), 
+               R2_log = round(R2_log, 3), 
+               R2_quad = round(R2_quad, 3)) %>%
+      mutate(max_R2 = pmax(R2, R2_log, R2_quad, na.rm = T)) %>%
+      arrange(desc(max_R2))
+    
+    
+    # # # # # CATEGORICAL RESPONSE # # # # #
+  } else {
+    
+    for (i in 1:ncol(dataframe)) {
+      
+      x <- dataframe[ ,i]
+      varname[i] <- names(dataframe)[i]
+      
+      if (class(x) %in% c("numeric", "integer")) {
+        vartype[i] <- "numeric"
+      } else {
+        vartype[i] <- "categorical"
+      }
+      
+      if (!identical(y, x)) {
+        
+        # linear: y ~ x
+        AIC[i] <- summary(glm(y ~ x, family = "binomial"))$aic 
+        
+        # log-transform: y ~ log(x)
+        if (is.numeric(x)) { 
+          if (min(x) <= 0) { # if y ~ log(x) for min(x) <= 0, do y ~ log(x + abs(min(x)) + 1)
+            AIC_log[i] <- summary(glm(y ~ log(x + abs(min(x)) + 1), family = "binomial"))$aic
+          } else {
+            AIC_log[i] <- summary(glm(y ~ log(x), family = "binomial"))$aic
+          }
+        } else {
+          AIC_log[i] <- NA
+        }
+        
+        # quadratic: y ~ x + x^2
+        if (is.numeric(x)) { 
+          AIC_quad[i] <- summary(glm(y ~ x + I(x^2), family = "binomial"))$aic
+        } else {
+          AIC_quad[i] <- NA
+        }
+        
+      } else {
+        AIC[i] <- NA
+        AIC_log[i] <- NA
+        AIC_quad[i] <- NA
+      }
+    }
+    
+    print(paste("Response variable:", response))
+    
+    data.frame(varname, 
+               vartype, 
+               AIC = round(AIC, 3), 
+               AIC_log = round(AIC_log, 3), 
+               AIC_quad = round(AIC_quad, 3)) %>%
+      mutate(min_AIC = pmin(AIC, AIC_log, AIC_quad, na.rm = T)) %>%
+      arrange(min_AIC)
+  } 
+}
+
+```
+
+### Function 2
+
+This second function I created makes a "result" which can be graphed in one of the newly discovered ggplots. It also takes in the same two arguments as above, dataframe and response.
+
+```{r}
+determine_predictor <- function(dataframe, response) {
+  if (is.numeric(dataframe[,response])) {
+quant_predictors <- best_predictor(dataframe, response) %>%
+  select(-c(vartype, max_R2)) %>%
+  gather(key = "key", value = "R2", -varname) %>%
+  filter(!is.na(R2))
+
+quant_predictors_order <- best_predictor(dataframe, response) %>%
+  select(varname, max_R2) %>%
+  filter(!is.na(max_R2)) %>%
+  arrange(max_R2) %>%
+  pull(varname)
+
+quant_predictors$varname <- factor(quant_predictors$varname, 
+                                     ordered = T, 
+                                     levels = quant_predictors_order)
+result <- quant_predictors
+return(result)
+  } else {
+qual_predictors <- best_predictor(dataframe, response) %>%
+  select(-c(vartype, min_AIC)) %>%
+  gather(key = "key", value = "AIC", -varname) %>%
+  filter(!is.na(AIC))
+
+qual_predictors_order <- best_predictor(dataframe, response) %>%
+  select(varname, min_AIC) %>%
+  filter(!is.na(min_AIC)) %>%
+  arrange(desc(min_AIC)) %>%
+  pull(varname)
+
+qual_predictors$varname <- factor(qual_predictors$varname, 
+                                     ordered = T, 
+                                     levels = qual_predictors_order)
+}
+result <- qual_predictors
+return(result)
+
+}
+```
+
+###Example
+
+Let's say a UFC coach approaches you and says "My fighter is going up against the Conor McGregor. We are gonna run our sets and we want to read McGregor like a book. I want to know when Conor McGregor is doing well against my fighter." You say, "I can definitely do that because I took a Sports Analytics Course in college."
+
+You search the internet for data. Luckily enough, you find a csv with UFC Fights and didn't have to webscrape. 
+
+```{r}
+ufc <- read.csv("conor.csv", stringsAsFactors=FALSE)    
+set.seed(596)                       ###Setting your seed makes it reproducable.
+#ufc <- sample_n(ufc, 10000)        ###If you are working with a large dataset, you might want to take a random sample with a function found in the dplyr package. This example code uses 10,000 datapoints from your sample.
+
+ufc <- lapply(ufc, as.numeric)      ###My data was being read as a factor, not a numeric, so I made it into a matrix. Usually, you won't have to do this.
+
+ufc <- as.data.frame(ufc)           ###I converted that matrix back into a data frame.
+ufc[is.na(ufc)] <- 0                ###This converts my NAs into 0s.
+```
+
+```{r}
+### I made my own stats. This will help us later.
+ufc$ATTEMPTS <- ufc$SIG_STR_ATTEMPTED + ufc$TOTAL_STR_ATTEMPTED + ufc$TD_ATTEMPTED + ufc$HEAD_ATTEMPTED + ufc$BODY_ATTEMPTED + ufc$LEG_ATTEMPTED + ufc$DISTANCE_ATTEMPTED + ufc$CLINCH_ATTEMPTED
+ufc$MADE <- ufc$SIG_STR_MADE + ufc$TOTAL_STR_MADE + ufc$TD_MADE + ufc$HEAD_MADE + ufc$BODY_MADE + ufc$LEG_MADE + ufc$DISTANCE_MADE + ufc$LEG_MADE + ufc$DISTANCE_MADE + ufc$CLINCH_MADE
+ufc$TOTAL <- ufc$ATTEMPTS + ufc$MADE
+ufc$PERCENT_MADE <- ufc$MADE/(ufc$TOTAL)
+ufc$SIG_STR_EFFICIENCY <- ufc$SIG_STR_MADE/(ufc$TOTAL_STR_MADE+ufc$SIG_STR_MADE+ufc$SIG_STR_ATTEMPTED+ufc$TOTAL_STR_ATTEMPTED)
+ufc$ID <- c(1:26)
+ufc                                 ###I want to check out my cool table.
+```
+
+
+Well now that you have your data, you need to be able to predict when Connor McGregor is doing well. A regression is really good at predictions. Lucky for us, your favorite TA from Sports Analytics gave you a function that can find a best predictor. You are going to define doing well as Knockdowns. This is because, from some research, the fighter with the most knockdowns is favored in the fight. Resultantly, you put in your dataframe and your variable you wanted to predict.
+
+```{r}
+best_predictor(ufc, "KD")
+result <- determine_predictor(ufc, "KD")
+```
+
+Bahhh! OH NO! This table is so hard to read. You need to visualize it (and you only want the best predictors). If only you had learned how to graph data in your statistics classes...
+
+
+```{r}
+result <- subset(result, R2>0.5)                                             ### Subsetting for R-squared above 0.5
+g <- ggplot(result, aes(x = R2, y = varname, col = key, group = varname)) + 
+  geom_line(col = "grey15", size = 2) +
+  geom_point(size = 3) + 
+  theme_light() + 
+  theme(legend.position = "bottom") +
+  labs(title = "Best predictors (& transformations) for Knockdowns", 
+       col = "Predictor Transformation", 
+       y = "Predictor") + 
+  scale_color_discrete(labels = c("None", "Log-Transformed", "Order 2 Polynomial"))
+ggplotly(g)                                                                  ### Sucker for an interactive graph
+```
+
+You notice that Distance Attempted, Head Attempted, Reversals, and Signature Strikes Made are great predictors for McGregor doing well in a fight. This means the more of these shots that happen in the fight, the more knockdowns against the other fighter. You want to see what Distance Attempted would look like against Knockdowns. 
+
+```{r}
+ggplot(ufc, aes(x = DISTANCE_ATTEMPTED, y = KD)) + 
+  geom_point() + 
+  geom_smooth() + 
+  labs(title = "Distance Attempts vs Knockdowns - Scatterplot")
+```
+We don't have a huge sample size, so we have a large confidence interval (large dark grey area). 
+
+You understand this graph perfectly. This is all very simple and there is nothing complicated happening here. But suddenly you realize, you have been studying statistics for years! The coach doesn't care about your confidence with confidence intervals. So you decide to make a graph that the coach can understand. You decide against making a scatter plot because you want to show off your cool graph making skills B-) <- (sunglasses emoji).
+
+You want to show McGregor's Knockdowns. So you decide to make a bar chart.
+```{r}
+myplot <- ggplot(data=ufc, aes(x=ID, y=KD)) +
+                geom_bar(stat="identity") +
+                theme_minimal() +
+                geom_line(aes(x = ID, y = mean(KD), color="20"), size = 1.5, group = 1, linetype= "dashed") +
+                labs(title="Conor McGregor", y="Knockdowns", x="", color="Average") +
+                scale_fill_manual(values = c("black"))+
+                theme(legend.text = element_text(color="Red", size=10), 
+                      legend.background = element_rect(fill="lightblue", size=0, linetype="solid", colour ="white"))
+
+myplot <- ggplotly(myplot)
+
+### Gets rid of some weird formatting for ggplot to ggplotly, you don't usually need this
+for (i in 1:length(myplot$x$data)){
+    if (!is.null(myplot$x$data[[i]]$name)){
+        myplot$x$data[[i]]$name =  gsub("\\(","",str_split(myplot$x$data[[i]]$name,",")[[1]][1])
+    }
+}
+
+myplot
+```
+
+Now you want to show the key factors in Knockdowns: Distance Attempted, Head Attempted, Reversals, Signature Strikes Made, and Leg Shots Made.
+```{r}
+l <- ggplot(ufc, aes(y = KD)) + 
+            geom_smooth(aes(x = LEG_MADE, y = KD, color="Leg Shots Made"), se = FALSE) + 
+            geom_smooth(aes(x = SIG_STR_MADE, y = KD, color="Signature Strikes Made"), se = FALSE) + 
+            geom_smooth(aes(x = REV, y = KD, color="Reversal"), se = FALSE) + 
+            geom_smooth(aes(x = HEAD_ATTEMPTED, y = KD, color="Head Shot Attempted"), se = FALSE) +
+            geom_smooth(aes(x = DISTANCE_ATTEMPTED, y = KD, color="Distance Attempted"), se = FALSE) +
+            labs(title = "Different Shots vs Knockdowns", y ="Knockdowns", x="Shots", color="") +
+            theme(legend.text = element_text(size=10), 
+                  legend.background = element_rect(fill="lightblue", size=0, linetype="solid", colour ="white"))
+l <- ggplotly(l)
+l
+```
+
+You tell the UFC coach that the more Leg Shots Made, Signature Strikes Made, Reversals, Head Shot Attempts, and Distance Attempts, the more Knockdowns McGregor will have in a fight. So the fighter should prepare for these.
+
+### Practice 
+
+Create a new data frame for a sport. Pick an interesting variable that you want analyze.
+
+```{r}
+
+```
+
+What are the best predictors for your variable?
+
+```{r}
+
+```
+
+Show the distribution of the best predictors. Label the graph and create a legend.
+
+```{r}
+
+```
+
+Show the distribution of the variable against a top predictor. Label the graph.
+
+```{r}
+
+```
+
+###R Assignment
+
+But uh oh... 
+
+Here comes a coach from your sport AND they want to know what you learned about the variable. What a coincidence! Create a graph (that isn't a scatter plot) that they can understand! Don't forgot to explain what the graph means as well.
+
+```{r}
+
+```
+
+
+
+

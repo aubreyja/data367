@@ -1,0 +1,224 @@
+---
+title: "DataFrames in R"
+by: Jason Spector
+output: 
+  pdf_document: default
+  html_notebook: default
+---
+
+### Loading and looking at your dataframe
+
+The easiest data source to load is a csv. To read a csv into the global environment use the read_csv function. To see all the arguments of read_csv type ?read.csv in the console and run the command.
+
+You can assign variables with either <- or the = sign. We name our data frame qbs below.
+
+```{r}
+# NOTE: Make sure your .rmd file is in the same directory as your .csv file.
+qbs <- read.csv('nfl_qbs.csv', stringsAsFactors = FALSE)
+```
+
+You can look at a preview of your data frame by double clicking on the data frame in the data UI to the left. If you want to look at it without the interface use the head() function.
+
+```{r}
+head(qbs)
+```
+
+You can view the first however many by adding an argument to head.
+
+```{r}
+head(qbs, 3)
+```
+
+Our data in this example has column titles and players in each row which help us identify the data. If you don't have this then you can name the columns and rows with colnames() and row.names(). The c() stands for concatenate, it creates a vector.
+
+Notice I have eval=FALSE in the chunk options. This means we will not run the code even when we run the entire file. I also put a # in front, this makes the code a comment and no longer runnable.
+
+```{r, eval=FALSE}
+#colnames(qbs) <- c("column1", "column2", "column3", "column4")
+
+#row.names(qbs) <- c("player1", "player2", "player3", "player4")
+```
+
+To see the size of your data frame you can either look at the data UI or you can run dim(). The [] notation allows us to return the subset of the dim() vector. Vectors in R start with an index at 1 unlike python which starts at 0. Essentially, dim(qbs)[1] will return the first number in the dim(qbs) returned vector. You can also use nrow() and ncol() to get the dataframe size.
+
+```{r}
+# Returns the number of rows and columns
+dim(qbs)
+
+# number of rows
+dim(qbs)[1]
+
+# number of columns
+dim(qbs)[2]
+
+# number of rows
+nrow(qbs)
+
+# number of columns
+ncol(qbs)
+```
+\pagebreak
+
+### Subsetting
+
+You can subset data frames very easily with the [] notation. The subset is dataframe[rows,columns].
+
+```{r}
+# returns the 1st row
+qbs[1,]
+```
+
+```{r}
+# returns the 1st column
+qbs[,1]
+```
+
+```{r}
+# returns the value at the 15th row and first column
+qbs[15, 1]
+```
+
+You can use combinations of c() and : to get more than single values!
+
+```{r}
+# returns the 10th and 15th items in the first row
+qbs[c(10, 15), 1]
+```
+```{r}
+# returns rows 10 through 15 and columns 1 through 3
+qbs[10:15, 1:3]
+```
+
+Another way to get a single vector column is with the $ sign. 
+
+```{r}
+qbs$Player
+```
+
+Notice that when you return a single column the output is a vector but when it is more than one you return a data frame.
+
+```{r}
+qbs[, c('Player', 'Age')]
+```
+
+You can also subset the dataframe by looking for certain values. 
+
+```{r}
+qbs[qbs$Player == "Jimmy Garoppolo", ]
+```
+
+\pagebreak
+
+### Computing in dataframes
+
+It is pretty easy to compute values from the dataframe Generally, you want to compute values from columns. Below we return the mean and median of TDs from the QBs.
+
+```{r}
+mean(qbs$TD)
+
+median(qbs$TD)
+```
+
+You can get your basic distribution with the summary() function.
+
+```{r}
+summary(qbs$TD)
+```
+
+Now, with what we learned before, what if we wanted all the information of qbs who threw more than 30 TDs?
+
+```{r}
+qbs[qbs$TD > 30, ]
+```
+
+or we can use the which function
+
+```{r}
+qbs[which(qbs$TD > 30), ]
+```
+
+The which function returns an index value and the subset uses those index values to decide what to keep.
+
+Which QB has the most TDs? Notice we use ==. = assigns variables while == is what we think of when we say equals.
+
+```{r}
+qbs$Player[which(qbs$TD == max(qbs$TD))]
+```
+
+or to get the player and value
+
+```{r}
+qbs[which(qbs$TD == max(qbs$TD)), c('Player', 'TD')]
+```
+
+### Missing Data
+
+To check if our data is missing values we use the is.na function. Combined with the any you can see if your data frame has missing data. 
+
+```{r}
+any(is.na(qbs))
+```
+
+let's remove the na's with na.omit
+
+```{r}
+qbs_com <- na.omit(qbs)
+
+dim(qbs_com)[1]
+```
+
+Now we see only 14 QBs had all columns filled. That's not even the entire leagues starting QBs. Why is that? Be careful with data. In this example, one of the reasons is Pick6's. A Pick6 is recorded only when it happens so instead of a zero when a QB didn't throw any in the season it is missing. Instead let's make our new data frame starter QBs who threw at least 200 passes. 
+
+```{r}
+qbs_start <- qbs[(qbs$GS > 0 & qbs$Att >= 200), ]
+```
+
+Now we are down to 33 QBs.
+
+Lastly, we can create new columns from others!
+
+```{r}
+qbs_start$td_int_ratio <- qbs_start$TD_per/qbs_start$Int_per
+```
+
+
+### Practice - Class Activity
+
+Create a new data frame called mvp. Start by further narrowing the qbs_start data frame by only keeping the top half of QBs by the number of TDs thrown. That means greater than or equal to the top 50 percent.
+
+```{r}
+
+```
+
+How many QBs are in the discussion?
+
+```{r}
+
+```
+
+Show the distribution of the TDs by these QBs
+
+```{r}
+
+```
+
+Using what you learned show the top three QBs in total number of TDs. (Hint: Look up the order function)
+
+```{r}
+
+```
+
+Now, I like a QB who is efficient. Let's narrow it down to 5 candidates by taking the top 5 QBs in td_int_ratio!
+
+```{r}
+
+```
+
+Finally, we will decide our MVP based on a weighted scale. Create a column called rank that is the sum of 20 percent times cmp_per (completion percentage), 30 percent times TD, 30 percent times td_int_ratio, and 20 percent times GWD (game winning drives). Show the QBs, their statistics used to create rank, and rank in the final output dataframe. The highest overall rank value is our MVP.
+
+```{r}
+
+```
+
+Turn your R-notebook into the appropriate Gradescope Assignment. Turn it in by the end of class
+

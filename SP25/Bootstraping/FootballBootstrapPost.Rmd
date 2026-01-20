@@ -1,0 +1,305 @@
+---
+title: "Football Bootstrapping"
+author: "Dr. Ekstrom"
+fontsize: 11pt
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+\begin{description}
+\item[Purpose:] In this activity, we explore the probability of a football team getting a first down on a given series. We will use data from the 2018 New England Patriots. 
+
+  \begin{description}
+    \item[Sports Analytics:] Look into a fundamental football question - what is the probabilty of getting a first down? 
+    \item[Statistics:] Bootstrapping simulation.
+    \item[R:] Bootstrapping in \textit{R} 
+  \end{description}
+\end{description}
+
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Preparing the Data}
+
+We begin by loading the data. 
+The data was downloaded from \href{www.pro-football-reference.com}{\textit{Pro Football Reference}}.
+Each week of data contains the offensive plays from the Patriots for the given week. 
+We modified the data to remove turnovers, kneel-downs, penalties, and special team plays. 
+
+```{r}
+week1=read.csv("W1NEvsTexansWO.csv")
+week2=read.csv("W2NEvsJagsWO.csv")
+week3=read.csv("W3NEvsLionsWO.csv")
+week4=read.csv("W4NEvsDolphinsWO.csv")
+week5=read.csv("W5NEvsColtsWO.csv")
+week6=read.csv("W6NEvsChiefsWO.csv")
+week7=read.csv("W7NEvsBearsWO.csv")
+week8=read.csv("W8NEvsBillsWO.csv")
+week9=read.csv("W9NEvsPackersWO.csv")
+week10=read.csv("W10NEvsTitansWO.csv")
+week11=read.csv("W11NEvsJetsWO.csv")
+week12=read.csv("W12NEvsVikingsWO.csv")
+week13=read.csv("W13NEvsDolphinsWO.csv")
+week14=read.csv("W14NEvsSteelersWO.csv")
+week15=read.csv("W15NEvsBillsWO.csv")
+week16=read.csv("W16NEvsJetsWO.csv")
+```
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+We now combine each weeks data into a dataframe named \texttt{season}.
+
+```{r}
+season=rbind(week1, week2, week3, week4, week5, week6, week7, week8, week9, 
+             week10, week11, week12, week13, week14, week15, week16)
+summary(season)
+```
+
+\rule{6.5in}{0.005in}
+
+We divide the plays into first-down plays, second-down plays, third-down plays, and fourth-down plays.
+
+```{r}
+FrstDwnPlys=season[which(season$Down==1),]
+summary(FrstDwnPlys)
+```
+
+\pagebreak
+
+```{r}
+ScdDwnPlys=season[which(season$Down==2),]
+summary(ScdDwnPlys)
+```
+
+```{r}
+ThdDwnPlys=season[which(season$Down==3),]
+summary(ThdDwnPlys)
+```
+
+\pagebreak
+
+```{r}
+FthDwnPlys=season[which(season$Down==4),]
+summary(FthDwnPlys)
+```
+
+\pagebreak
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Creating the Simulation}
+
+In this simulation, we will sample a play from the first down plays, then a play from the second down plays (if needed), then a play from the third down plays (if needed) to see if we can get a first down. 
+We will not consider penalties, nor we will go for it on fourth down. 
+
+```{r}
+# keep track of downs - must be reset each time we run a series
+down=1
+# keep track of yards to go - must be reset each time we run a series
+ydstogo=10
+# keep track if we get a first down - must be reset each time we run a series
+success=0
+# Begin the series - sample from a first down play
+fd=sample(nrow(FrstDwnPlys), 1)
+# determine how many yards were gained on this first down play
+gain=FrstDwnPlys[fd, ]$Gained
+# print the results
+print(paste("Gained", gain,"on 1st down"), quote = FALSE)
+# update how many yards to go
+ydstogo=ydstogo-gain
+# update the down
+down=down+1
+# if statement that checks if we made a first down
+if(ydstogo<=0){
+  # print success statement
+  print("Made it!")
+  # updates success variable
+  success=1
+} else {
+  # Else - Continue Series - sample from a second down play
+  sd=sample(nrow(ScdDwnPlys), 1)
+  # determine how many yards were gained on this second down play
+  gain=ScdDwnPlys[sd, ]$Gained
+  # print the results
+  print(paste("Gained", gain,"on 2nd down"), quote = FALSE)
+  # update how many yards to go
+  ydstogo=ydstogo-gain
+  # update the down
+  down=down+1
+  # if statement that checks if we made a first down
+  if(ydstogo<=0){
+    # print success statement
+    print("Made it!")
+    # updates success variable
+    success=1
+  } else {
+    # Continue Series - sample from a second down play
+    td=sample(nrow(ThdDwnPlys), 1)
+    # determine how many yards were gained on this third down play
+    gain=ThdDwnPlys[td, ]$Gained
+    # print the results
+    print(paste("Gained", gain,"on 3rd down"), quote = FALSE)
+    # update how many yards to go
+    ydstogo=ydstogo-gain
+    # update the down
+    down=down+1
+    # if statement that checks if we made a first down
+    if(ydstogo<=0){
+      # print success statement
+      print("Made it!")
+      # updates success variable
+      success=1
+    } else {
+      # print failure statement
+      print("Didn't make it...")
+    }
+  }
+}
+  
+success
+
+```
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+Now we wrap this in a \texttt{for} loop, so we can run many series.
+Note that once we have it running - we comment out the print statments. 
+
+```{r}
+# Series is the number of Series we will run
+Series=10000
+# vector to keep track of successes
+result=rep(-1,Series)
+# for loop to simulate many series
+for(i in 1:Series){
+  # print out which series we are on
+  # print(paste("Start of Series", i), quote = FALSE)
+  # keep track of downs - must be reset each time we run a series
+  down=1
+  # keep track of yards to go - must be reset each time we run a series
+  ydstogo=10
+  # keep track if we get a first down - must be reset each time we run a series
+  success=0
+  # Begin the series - sample from a first down play
+  fd=sample(nrow(FrstDwnPlys), 1)
+  # determine how many yards were gained on this first down play
+  gain=FrstDwnPlys[fd, ]$Gained
+  # print the results
+  #print(paste("Gained", gain,"on 1st down"), quote = FALSE)
+  # update how many yards to go
+  ydstogo=ydstogo-gain
+  # update the down
+  down=down+1
+  # if statement that checks if we made a first down
+  if(ydstogo<=0){
+    # print success statement
+    #print("Made it!")
+    # updates success variable
+    success=1
+  } else {
+    # Continue Series - sample from a second down play
+    sd=sample(nrow(ScdDwnPlys), 1)
+    # determine how many yards were gained on this second down play
+    gain=ScdDwnPlys[sd, ]$Gained
+    # print the results
+    #print(paste("Gained", gain,"on 2nd down"), quote = FALSE)
+    # update how many yards to go
+    ydstogo=ydstogo-gain
+    # update the down
+    down=down+1
+    # if statement that checks if we made a first down
+    if(ydstogo<=0){
+      # print success statement
+      #print("Made it!")
+      # updates success variable
+      success=1
+    } else {
+      # Continue Series - sample from a third down play
+      td=sample(nrow(ThdDwnPlys), 1)
+      # determine how many yards were gained on this third down play
+      gain=ThdDwnPlys[td, ]$Gained
+      # print the results
+      #print(paste("Gained", gain,"on 3rd down"), quote = FALSE)
+      # update how many yards to go
+      ydstogo=ydstogo-gain
+      # update the down
+      down=down+1
+      # if statement that checks if we made a first down
+      if(ydstogo<=0){
+        # print success statement
+        #print("Made it!")
+        # updates success variable
+        success=1
+      } else {
+        success=0
+        #print("Didn't make it...")
+      }
+    }
+  }
+  # stores success into the result vector
+  result[i]=success 
+
+}
+# computes the mean of the result vector
+mean(result)
+
+```
+
+When I simulated 10,000 series, I got a value of 0.6951, which means that the team would get a first down on approximately 69.5\% of series. 
+
+\pagebreak
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Group Activites}
+
+\noindent \textbf{Passing on First Down:}
+What if we modified our simulation so that we only passed the ball on first down? 
+Adjust the simulation to account for this modification, and run 10000 series. 
+Give the approximate probability of getting a first down in at most three plays when we pass on first down.
+
+This will be the class activity that will be due by the end of class on February 27th.
+Turn in your notebook with your simulation code, and the result of running 10000 series to the
+Gradescope assignment \textit{Class Activity 2/27}.
+ 
+
+```{r}
+
+```
+
+\rule{6.5in}{0.005in}
+
+\noindent \textbf{Running on First Down:}
+What if we modified our simulation so that we only ran the ball on first down? 
+Adjust the simulation to account for this modification, and run 10000 series. 
+Give the approximate probability of getting a first down in at most three plays when we run on first down.
+
+Turn in your notebook with your simulation code, and the result of running 10000 series.
+
+
+
+```{r}
+
+```
+
+\rule{6.5in}{0.005in}
+
+\noindent \textbf{Adjusting 2nd and 3rd Down Based on Yards to Go:}
+Adjust the model to select only plays with (about) the same yards to go.
+For example, if it is 2nd down with 6 yards to go, randomly select a play (either running or passing) from the season that was 2nd down and between 5 and 7 yards to go. Do the same for 3rd down. 
+Adjust the simulation to account for this modification, and run 10000 series. 
+Give the approximate probability of getting a first down in at most three plays when we run on first down.
+
+Turn in your notebook with your simulation code, and the result of running 10000 series.
+
+```{r}
+
+```
+
+
+

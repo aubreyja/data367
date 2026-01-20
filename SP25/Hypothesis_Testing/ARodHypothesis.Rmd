@@ -1,0 +1,263 @@
+---
+title: "ARod Hypothesis Test"
+author: "Dr. Ekstrom"
+fontsize: 11pt
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+\begin{description}
+\item[Purpose:] Did Alex Rodriquez shrink under the pressure of the post-season? Or is he the victim of a small sample size? In this activity, we explore ARod's post season struggles. 
+
+  \begin{description}
+    \item[Sports Analytics:] Test a claim regarding ``clutch performance''. 
+    \item[Statistics:] Hypothesis testing using a simulation.
+    \item[R:] Simulating in \textit{R} 
+  \end{description}
+\end{description}
+
+\noindent To test the claim about ARod's post-season performance, we use a hypothesis test.
+
+\noindent \textsc{The Idea of a Hypothesis Test}
+
+Imagine you are playing a dice game with the shady character Dr. X. You notice that when Dr. X rolls his die, the number six seems to appear too often. 
+In fact, you record that the number six has appeared in 12 of his 20 rolls.
+You start to suspect that Dr. X isn't using a fair die. 
+However, he won't let you inspect the die, so all you have to go on is your observations.
+Is the fact that you have observed the number six in 12 of his 20 rolls enough evidence to conclude that the die Dr. X is using is not fair?
+
+Let us assume Dr. X is using a fair die. What is the probability of seeing an event this extreme (i.e. observing a six in at least 12 of 20 rolls)?
+If you know about the binomial distribution, you can compute the probability directly. 
+We will compute this probability by simulating 200,000 experiments of 20 rolls.
+
+We begin by simulating one of experiment of 20 rolls.
+
+```{r}
+# vector representing the die
+die=c(1,2,3,4,5,6)
+# probability of each face occuring
+prd=rep(1/6,6)
+# sampling representing 20 rolls of the die - held in simd
+simd=sample(die,20,prob=prd,replace=TRUE)
+simd
+# counts the number of 6's that occur
+sum(simd==6)
+```
+
+Now we construct a \texttt{for} loop to simulate 200,000 experiments.
+We create the vector \texttt{simres} to store the results.
+
+```{r}
+# ns is the number of simulation of 20 rolls
+ns=200000
+# simres is a place to hold the result of each simulation
+simres=rep(-1,ns)
+# main for loop begins
+for(j in 1:ns){
+  # sampling representing 20 rolls of the die - held in simd
+  simd=sample(die,20,prob=prd,replace=TRUE)
+  # stores the number of 6's from this simulation to simres
+  simres[j]=sum(simd==6)
+}
+# main for loop ends
+sum(simres>=12)/ns
+```
+
+We see that if Dr. X is using a fair die, such an observation is highly unlikely. 
+Thus we conclude that Dr. X is not using a fair die. 
+This reasoning is the heart of a hypothesis test. 
+It should be noted that we cannot be certain that Dr. X is using an unfair die, he may be using a fair die and we observed something truly remarkable. 
+(Consider how unlikely it is for anyone to win the lottery - yet people do win it!)
+However, it is so unlikely, we are willing to live with the chance that our conclusion is wrong.
+
+\pagebreak
+
+\noindent \textsc{Setting Up Our Hypothesis Test for ARod}
+
+The first step is to set up our hypotheses. In general, the null hypothesis is there is no difference in performance. 
+In the example above, our null hypothesis was that Dr. X was using a fair (regular) die.
+The alternate is that there is some sort of difference (and we choose if it is less than, greater than, or not equal to). 
+\begin{description}
+  \item[Null Hypothesis:] Alex Rodriguez's post-season performance is not significantly different from his regular season performance.
+  \item[Alternate Hypothesis:] Alex Rodriguez's post-season performance is significantly lower than his regular season performance.
+\end{description}
+
+The second step is to choose a signficance level (or $\alpha$ level).
+I tend to use 5\%, but 10\% or 1\% is also common. 
+We will discuss the role of this signficance level later, but it is important to make this choice now.
+
+The data for this test is located in \texttt{Alex Rodriguez hypoth.csv}
+
+```{r}
+z=read.csv("/Users/DoctorX/Desktop/Math 367 S19/Class Activities/07 ARod Hypoth/Alex Rodriguez hypoth.csv")
+z
+```
+
+\pagebreak
+
+\noindent{\sc Choosing a Metric}
+
+The metric we will use to evaluate Alex Rodriquez's performance is \texttt{OPS}. 
+We have seen in a previous activity that \texttt{OPS} is a pretty effective measure for offensive production, and has been adopted as a standard metric in the baseball community. 
+
+Recall that $\texttt{OPS}=\texttt{OBP}+\texttt{SLG}$ and
+\[ {\tt OBP} = \frac{ {\tt H} + {\tt BB} + {\tt HBP}}{{\tt AB}+{\tt BB}+{\tt HBP}+{\tt SF}  }  \]
+\[ {\tt SLG} = \frac{ {\tt X1B}+ 2\cdot {\tt X2B} +3\cdot {\tt X3B}+4\cdot {\tt HR}}{{\tt AB}  }  \]
+So Alex's career \texttt{OPS} (this includes both regular season and post-season) is:
+
+```{r}
+attach(z)
+OBP=(H+BB+HBP)/(AB+BB+HBP+SF)
+SLG=(X1B+2*X2B+3*X3B+4*HR)/AB
+OPS=OBP+SLG
+OPS[3]
+```
+We see that Alex's career \texttt{OPS} is 0.927 - including regular and post seasons. We will test whether Alex's post season \texttt{OPS} is significantly lower than his career \texttt{OPS}, so our hypotheses become:
+\begin{description}
+  \item[\(H_{0}\):] \( {\tt OPS_{Post}} = 0.927 \)
+  \item[\(H_{a}\):] ${\tt OPS_{Post}} < 0.927 $
+\end{description}
+An important question here: Why am I comparing his post-season \texttt{OPS} to his career \texttt{OPS}, rather than comparing it with just his regular season \texttt{OPS}?
+We are doing this because we are assuming the null hypothesis is true - that there is no difference between his performance in the regular season and the post-season - and that his post-season plate appearances should be treated as any other subset of plate appearances from ARod's career (such as plate appearances from July 2007). 
+
+We know Alex's post season \texttt{OPS}, it is:
+
+```{r}
+OPS[2]
+```
+Clearly it is less than his career \texttt{OPS}. However, Alex had very few at-bats in the post season (compared to the number of regular season at bats he had). 
+\texttt{OPS} has natural fluctuations, and in a small sample, we will naturally see a wide variation of \texttt{OPS} values. 
+Perhaps it was just unfortunate for Alex that this low fluctuation occured in the post season.
+In the language of statistics, we ask \textit{was this observed difference significant}?
+
+So we are going to assume that Alex was the same player in the post-season as the regular season and that his lower \texttt{OPS} is simply due to chance. 
+
+In general, this is an important part of executing a hypothesis test - that you assume the null hypothesis is true - so the differences you see in the data are just due to natural variations one would expect to see. 
+(Think of this as the presumption of innocence in our legal system.)
+
+Then the question becomes - what is the likelihood seeing such a low \texttt{OPS} due to chance. 
+
+\pagebreak
+
+\noindent \textsc{Creating a Simulation}
+
+To find the answer to the question: what is the likelihood of seeing an \texttt{OPS} as low as 0.8215762 for ARod due to chance, we will simulate post-season experiences for Alex. 
+To simplify our analysis, we will ignore sacrifice flies and sacrifice bunts since they would require a more advanced simulation than we are presenting here. 
+However, since Alex had so few sacrifice flies and bunts in his career, we do not expect this to have much of an impact on our analysis.
+
+First, I am going to create two new variables:
+\begin{description}
+  \item[\tt APA:] (adjusted plate appearances) - which will be the sum of his at-bats, walks, and hit by pitches.
+    \[ \texttt{APA} = \texttt{AB+BB+HBP} \]
+  \item[\tt Outs:] Non-sacrifice outs.
+    \[ \texttt{Outs} = \texttt{AB-X1B-X2B-X3B-HR} \]
+\end{description}
+
+```{r}
+APA=AB+BB+HBP
+Outs=AB-X1B-X2B-X3B-HR
+```
+
+Next we will create a vector \texttt{poss} that contains the possible outcomes of an adjusted plate appearance, where
+1 represents a single, 2 represents a double, 3 a triple, 4 a homerun, 5 represents either a walk or a hit by pitch, and 6 represents a non-sacrifice out.
+We also create the corresponding probability vector \texttt{pr}, using ARod's career statistics.  
+
+```{r}
+poss=c(1,2,3,4,5,6)
+pr=c(X1B[3]/APA[3],X2B[3]/APA[3],X3B[3]/APA[3],HR[3]/APA[3],(BB[3]+HBP[3])/APA[3],Outs[3]/APA[3])
+
+```
+
+Note that ARod had 326 post-season adjusted plate appearances during his career. To simulate 326 adjusted plate appearances, we use
+
+```{r}
+sample(poss,326,prob=pr,replace=TRUE)
+```
+
+Next, we want to know how many outs, singles, doubles, etc., happened during these simulated plate appearances. There are several ways to do this, I tend to use the histogram command, such as
+
+```{r}
+sim=sample(poss,326,prob=pr,replace=TRUE)
+q=hist(sim,breaks=c(0.5,1.5,2.5,3.5,4.5,5.5,6.5))
+```
+
+We then calculate the \texttt{OPS} that would result from these plate appearances (we are also calculating \texttt{OBP} and \texttt{SLG} along the way):
+
+```{r}
+pobp=(q$counts[1]+q$counts[2]+q$counts[3]+q$counts[4]+q$counts[5])/(q$counts[1]+q$counts[2]+q$counts[3]+q$counts[4]+q$counts[5]+q$counts[6])
+pobp
+pslg=(q$counts[1]+2*q$counts[2]+3*q$counts[3]+4*q$counts[4])/(q$counts[1]+q$counts[2]+q$counts[3]+q$counts[4]+q$counts[6])
+pslg
+pobp+pslg
+```
+
+Of course, every time I ran this simulation, I could get completely different numbers. 
+What is the likelihood I would get a number as low as 0.8215762?
+To answer this, we create a \texttt{for} loop so we can run this simulation $n$ times. 
+We create the vector \texttt{pops} to store the results.
+
+```{r}
+# n is number of simulation
+n=20000
+# pops holds the ops for each simulated post-season
+pops=rep(-1,n)
+# begins main for loop
+for(j in 1:n){
+  # samples 326 plat appearances and stores them in sim 
+  sim=sample(poss,326,prob=pr,replace=TRUE)
+  # divides the results in sim into bins
+  q=hist(sim,breaks=c(0.5,1.5,2.5,3.5,4.5,5.5,6.5),plot=FALSE)
+  # computes the obp for this simulated post-season
+  pobp=(q$counts[1]+q$counts[2]+q$counts[3]+q$counts[4]+q$counts[5])/(q$counts[1]+q$counts[2]+q$counts[3]+q$counts[4]+q$counts[5]+q$counts[6])
+  # computes the slg for this simulated post-season
+  pslg=(q$counts[1]+2*q$counts[2]+3*q$counts[3]+4*q$counts[4])/(q$counts[1]+q$counts[2]+q$counts[3]+q$counts[4]+q$counts[6])
+  # computes the ops for this simulated post-season
+  pops[j]=pobp+pslg
+}
+# ends main for loop
+```
+
+Now that we have run this $n$ times, we just need to count the number of times the simulated OPS was as low as 0.8215762, and divide by $n$ 
+
+```{r}
+sum(pops<=.8215762)/n
+```
+
+When I ran this simulation with $n=20000$, I got 0.0934. 
+
+\noindent \textsc{Interpreting the Results}
+
+How do we interpret 0.0934 (or whatever number you got when you ran it)? 
+We randomly created 20000 possible sets of 326 adjusted plate appearances based on ARod's career numbers. 
+Of those, 9.34\% had an \texttt{OPS} as low as 0.8215762.
+In other words, there is a 9.34\% chance of seeing an \texttt{OPS} this low just by chance. 
+Since I chose a significance level of 5\%, this is not enough evidence to reject the null hypothesis in favor of the alternate. 
+(Had I chosen 10\%, it would have been borderline, and I would run the simulation a number of times before reaching any conclusion.)
+Or, in other words, based on this simulation, I do not have enough evidence to conclude that ARod's post-season performance was \textit{significantly} worse than his regular season performance (or career performance). 
+Or, the difference between ARod's post-season performance and regular season performance was not \textit{statistically significant}.  
+
+\noindent \textsc{Futher Considerations}
+
+Our simulation only considered ARod's offensive production, and had a few simplifying assumptions. 
+It also did not take into consideration that ARod probably faced better pitching in the post-season.
+It would be interestng to run a more complete simulation and see if our results - and our conclusion - would be different.
+
+\noindent \textsc{Group Activity}
+
+Run a similar hypothesis test for a different athlete of your choosing. 
+How does LeBron's performance in the post-season compare to his regular season performance? What about James Harden? Or Tom Brady? Or Derek Jeter?
+
+\begin{itemize}
+  \item Pick an athlete. 
+  \item Find data for this athlete's perfomance. (Sites like     www.baseball-reference.com have plenty of player data.)
+  \item Determine a metric to measure their performance. 
+  \item Set-up your null and alternate hypothesis. 
+  \item Pick a level of significance.
+  \item Create a simulation to determine the probability of such an extreme event as the one observed occuring.
+  \item Reach an appropriate conclusion.
+\end{itemize}
+
+Use an \textit{R} notebook for this assignment and turn in your knitted pdf document in the assignment dropbox in D2L.
+
+

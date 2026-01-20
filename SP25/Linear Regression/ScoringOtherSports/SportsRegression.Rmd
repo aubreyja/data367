@@ -1,0 +1,175 @@
+---
+title: "Regression in Sports"
+author: "Dr. Ekstrom"
+fontsize: 11pt
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+\begin{description}
+\item[Purpose:] To learn more about regression, getting and loading data, and using regression to identify key statistics in a variety of sports. 
+  \begin{description}
+    \item[Sports Analytics:] Try to explain how points (or goals) are scored in various sports. 
+    That is, to try to create a statistic that explains as much run scoring as possible.
+    \item[Statistics:] Discuss the assumptions in using regression for prediction, and a bit of multiple regression.
+    \item[R:] Downlaoding suitable data from the net, loading data into {\em R} and using multiple regression to create     new statistics.
+  \end{description}
+\end{description}
+
+\rule{6.5in}{0.02in}
+
+\pagebreak
+
+\textsc{\large Model from Previous Activity}
+
+Most groups determined that the model: 
+\[ {\tt R} =-877.49+2175.73 \cdot {\tt OPS }\]
+had the highest \(R\)-squared and lowest residual standard error. 
+
+```{r}
+bbr=data=read.csv("BaseballRuns.csv")
+bbr$SLG=(bbr$X1B+2*bbr$X2B+3*bbr$X3B+4*bbr$HR)/(bbr$AB)
+bbr$OBP=(bbr$X1B+bbr$X2B+bbr$X3B+bbr$HR+bbr$BB+bbr$HBP)/(bbr$AB+bbr$BB+
+                                                           bbr$HBP+bbr$SF)
+bbr$OPS=bbr$OBP+bbr$SLG
+gos=lm(formula=bbr$R~bbr$OPS)
+summary(gos)
+```
+
+However, to use this model to predict \texttt{R} from a given value of \texttt{OPS}, there
+are a few assumptions that should be met:
+
+\textbf{Normally distributed variables:} The dependent and independent variables 
+		should be normally distributed. 
+
+\textbf{Linearity and additivity:}
+	The relationship between dependent and independent variables should be linear
+
+\textbf{Normally distributed residuals:} The residuals should be normally distributed
+
+\textbf{Homoscedasticity:} The residuals should have constant variance
+
+\textbf{Free of Problem Points:} The data should be free of outliers and leverage 
+	points. These points that have an undue influence on our model.
+
+\rule{6.5in}{0.005in}
+
+\pagebreak
+
+\textsc{Checking the Assumptions}
+
+\textbf{Normally distributed variables:}
+	
+Plot histograms and look for the classic bell-shape:
+		
+```{r}
+hist(bbr$OPS)
+```
+
+```{r}
+hist(bbr$R)
+```
+\pagebreak
+
+\textbf{Linearity and additivity:} Plot scatterplot and check that the main ``cloud'' has a linear shape:
+
+```{r}
+plot(bbr$OPS,bbr$R,xlab="On-base Plus Slugging",ylab="Runs")
+```
+\pagebreak
+
+\textbf{Normally distributed residuals:} Make a QQ-Plot of residuals (and put in
+	the QQ-line) and see if the line is a good fit (which would mean the residuals
+	are at least approximately normal). Note that \texttt{rstandard()} computes the 
+	standardized residuals - which are generally more useful for our purposes: 
+	
+```{r}
+res=rstandard(gos)
+qqnorm(res,col="blue")
+qqline(res,col="red")
+```
+\pagebreak
+
+\textbf{Homoscedasticity:} Make a scatter plot of residuals vs independent variable and
+	look to see if the ``cloud'' is roughly rectangular. If the cloud has a megaphone shape,
+	it is a problem that needs to be addressed. 
+	
+```{r}
+plot(bbr$OPS,res,ylim=c(-3,3),xlab="On-base Plus Slugging",ylab="Residuals")
+```
+\pagebreak
+
+\textbf{Free of Problem Points:} In the plot above, look for standardized residuals that are 
+greater than 3 (or less than -3) - these could be outliers. 
+Also look for independent variable values that are well outside the ``normal
+	range'' of independent variable values - these could be leverage points. If there are
+	candidates for either type of problem points, try removing them from the data and
+	recalculating the linear model to see if it is much different from the original. 
+	You may prefer to use the model that is free from problem points, but it is a judgement
+	call.
+
+\rule{6.5in}{0.02in}
+
+\pagebreak
+
+\textsc{\large Just a Bit of Multiple Regression} If you compute the statistic 
+\[ {\tt OOPS} = 2\cdot {\tt OBP} + {\tt SLG}  \]
+it does a better job than \texttt{OPS} in explaining \texttt{R}.
+```{r}
+bbr$OOPS=2*(bbr$OBP)+bbr$SLG
+goos=lm(formula=bbr$R~bbr$OOPS)
+summary(goos)
+```
+
+How do we know that combining twice as much \texttt{OBP} as \texttt{SLG} would give a better predictor? 
+Endless trial and error? 
+
+A bit of multiple linear regression is helpful.
+You can use the same \texttt{lm()} command with more variables: 
+
+```{r}
+gm=lm(formula=bbr$R~bbr$OBP+bbr$SLG)
+summary(gm)
+```
+
+Note that the coefficient for \texttt{OBP} is roughly twice the size of \texttt{SLG}.
+Also note that the significance of each of the variables. Only include variables
+that are significant (small probabilities, such as less than 0.05).
+
+If we add \texttt{SB} (stolen bases) to the mix, we see that it is not signficant
+enough to be included.
+
+```{r}
+gmb=lm(formula=bbr$R~bbr$OBP+bbr$SLG+bbr$SB)
+summary(gmb)
+```
+
+\rule{6.5in}{0.02in}
+
+\pagebreak
+
+\textsc{\large Class Activity}
+
+Our goal is to perform an analysis similar to the
+one we performed in \textit{Baseball runs part 1} on another sport.
+Can we identify a statistic that is the best predictor of scoring? 
+(or best explains scoring? or winning percentage? or wins?) 
+
+\begin{itemize} 
+	\item Choose a sport among: College Basketball, NBA, 
+	College Football, NFL, NHL, or Soccer. 
+	\item Find data for your sport. A great reference is: \\ 
+	\href{https://www.sports-reference.com/}{{\bf https://www.sports-reference.com/}}
+	\item Download the appropriate data. (CSVs work well.)
+	\item Load the data into {\em R}.
+	\item Perform your analysis on the data.
+
+\end{itemize}
+
+\noindent When your group is finished, turn in a copy of the groups R-notebook and
+data to the appropriate Gradescope assignment.
+ 
+
+
+

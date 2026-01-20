@@ -1,0 +1,256 @@
+---
+title: "Harper vs Trout"
+author: "Dr. Ekstrom"
+fontsize: 11pt
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+\begin{description}
+\item[Purpose:] In this activity, we will compare the offensive performance of Bryce Harper with Mike Trout. 
+
+  \begin{description}
+    \item[Sports Analytics:] Introduce some ideas of examining offensive perfomance in baseball.
+    \item[Data Science:] Finding and downloading data from an appropriate website.
+    \item[R:] Introduction to \textit{R} - including loading data, data frames and variables, and manipulating variables.
+  \end{description}
+\end{description}
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Finding, Downloading, and Uploading Data}
+
+There are many sites that have baseball data. Here we will use
+\href{https://www.baseball-reference.com/}{\textcolor{blue}{Baseball Reference}}.
+Go to the site. Type \textit{Bryce Harper} in the search box, and press the search button.
+
+Once you get to the Bryce Harper page, scroll down to the \textbf{Standard Batting} section.
+Go to \textbf{Share \& more} - a menu should pop up and select **Get table as CSV (for Excel)** from that menu. The table turns into \textit{csv} which you can copy. 
+I copy the table, paste it into a blank TextEdit file (I have a Mac), and then save it as a \textit{csv} file. 
+In this case, I named the file \textit{BryceHarper.csv}. 
+Be sure you put this new file in a place you can find it.
+
+\rule{6.5in}{0.005in}
+
+To load the data, we use the \textit{read.csv} command.
+
+```{r}
+# Reads the CSV file and stores it in harper
+harper=read.csv("BryceHarper.csv")
+```
+
+The command above will load the \textit{BryceHarper.csv} file and store it in `harper` - which becomes a dataframe. 
+A dataframe in \textit{R} is similar to an array, but it is far more versatile.  
+
+Note the windows in the right margin. 
+In the top right window, select \textbf{Environment} tab, under \textbf{Data} you should see `harper` - click on this to see the dataframe `harper`. 
+
+\pagebreak
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Manipulating the Data}
+
+Each column in the `harper` is easily accessible. For example, to access the `AB` (at-bats) column
+
+```{r}
+harper$AB
+```
+
+Note that Harper's career total in `AB` is the 9th entry (in the table, the row is labeled 8 yrs). 
+To access this particular entry: 
+
+```{r}
+harper$AB[9]
+```
+
+How many extra base hits - doubles (\texttt{X2B}), triples (\texttt{X2B}), and homeruns (\texttt{HR}) - has Harper hit in his career? 
+
+```{r}
+# we create a new variable xbh - which is the sum of the variables for doubles, 
+# triples and homeruns
+xbh=harper$X2B+harper$X3B+harper$HR
+# the career total for xbh
+xbh[9]
+```
+So Harper has hit 457 extra base hits in his career (as of December 31, 2019).
+
+How many singles has Harper hit in his career?
+
+```{r}
+harperX1B=harper$H[9]-xbh[9]
+harperX1B
+```
+Harper has hit 614 singles as of May 31, 2019.
+
+If we want to see (or access) all of Harper's career totals, we can use
+
+```{r}
+harper[9,]
+```
+
+\pagebreak
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{A Bit of Analysis}
+
+What kind of numbers would Harper have if he took every at-bat for his team during the season?
+We will assume that Harper's team will get exactly 9 innings worth of at-bats every game. 
+
+How many outs does a team get in a season? 
+There are 27 outs in a game (again, assusming the team gets exactly 9 innings worth of at-bats every game), and 162 games in a season, so there are 4374 total outs in a season.
+
+How many outs has Harper made thus far in his career? 
+We subtract the number of hits (\texttt{H}) from his total at-bats (\texttt{AB}), and add sacrifice bunts (\texttt{SH}), sacrifice flies  (\texttt{SF}), times caught stealing  (\texttt{CS}), and number of double plays he grounded into (\texttt{GDP}).
+
+```{r}
+# Create a variable to hold the number of outs Harper has made thus far
+harperouts=harper$AB[9]-harper$H[9]+harper$SH[9]+harper$SF[9]+harper$CS[9]+
+  harper$GDP[9]
+harperouts
+```
+
+We divide the number of outs Harper has made thus far by the number of outs a team gets in a season:
+
+```{r}
+# Create a variable to hold the season factor for Harper
+harperfactor=harperouts/4374
+harperfactor
+```
+
+So Harper has made 0.6778692 seasons worth of outs. 
+So if Harper took every at-bat for his team, how many homeruns would Harper hit in a season?
+
+```{r}
+harper$HR[9]/harperfactor
+```
+
+How many homeruns would Harper hit per game?
+
+```{r}
+harper$HR[9]/(162*harperfactor)
+```
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+The next question is how all these hits turn into runs. 
+There are many ways to do this - one way is to create a model using linear weighting (something we will consider later in the semester). 
+One such model is below:
+
+$$ \begin{array}{rcl} 
+  \left( \begin{array}{c}  \mbox{Runs} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) &=& 
+  -3.07429+0.55615* \left( \begin{array}{c} \mbox{Singles} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) 
+  +0.77286* \left( \begin{array}{c} \mbox{Doubles} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) \\
+  & & \\
+  & & 
+  +1.20914* \left( \begin{array}{c} \mbox{Triples} \\ \mbox{per} \\ \mbox{Game} \end{array} \right)
+  +1.49853* \left( \begin{array}{c} \mbox{Homeruns} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) 
+  +0.33919* \left( \begin{array}{c} \mbox{Walks} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) \\
+  & & \\
+  & &
+  +0.13084* \left( \begin{array}{c} \mbox{Stolen Bases} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) 
+  +0.67992* \left( \begin{array}{c} \mbox{Caught Stealing} \\ \mbox{per} \\ \mbox{Game} \end{array} \right) 
+  \end{array}$$
+
+
+```{r}
+Harperruns=-3.07429+0.55615*(harperX1B/(162*harperfactor))+
+  0.77286*(harper$X2B[9]/(162*harperfactor))+
+  1.20914*(harper$X3B[9]/(162*harperfactor))+
+  1.49853*(harper$HR[9]/(162*harperfactor))+
+  0.33919*(harper$BB[9]/(162*harperfactor))+
+  0.13084*(harper$SB[9]/(162*harperfactor))+
+  0.67992*(harper$CS[9]/(162*harperfactor))
+Harperruns
+# To get the total number of runs in a season
+162*Harperruns
+```
+
+\pagebreak
+
+\rule{6.5in}{0.005in}
+
+How would these runs tranlate to wins? 
+Again, there are several ways to do this. 
+The Pythagorean Theorem of Baseball (see \href{https://www.baseball-reference.com/bullpen/Pythagorean_Theorem_of_Baseball}{\textcolor{blue}{Pythagorean Theorem of Baseball}}) says
+
+$$  \mbox{Winning Percentage} = \frac{ (\mbox{Runs Scored})^{1.81} }{(\mbox{Runs Scored})^{1.81}+(\mbox{Runs Allowed})^{1.81}} $$
+
+In 2018, teams allowed 4.45 runs per game (see \href{https://www.baseball-reference.com/leagues/MLB/bat.shtml}{\textcolor{blue}{Major League Baseball Batting Year-by-Year Averages}}) or a total of 720.9 runs. 
+Using the Pythagorean Theorem for baseball,
+
+```{r}
+HarperWPercent=(1169.615)^(1.81)/((1169.615)^(1.81)+(720.9)^(1.81))
+HarperWPercent
+```
+we would expect Harper's team to win around 70.6\% of their games. 
+This equates to
+```{r}
+162*HarperWPercent
+```
+around 114 wins. 
+
+
+\rule{6.5in}{0.005in}
+
+
+\pagebreak
+
+\rule{6.5in}{0.02in}
+
+\noindent \textsc{Class Work}
+
+\begin{enumerate}
+\item Go through a similar analysis for Mike Trout. 
+\begin{itemize}
+  \item Find and download career data for Mike Trout.
+  \item Upload data into \textit{R}.
+  \item Use the linear weighting and Pythagorean Theorem for baseball above to answer the following questions. 
+  \begin{itemize}
+    \item Determine how many runs a team would score if Mike Trout took every at-bat (again, assume the team gets exactly 27 outs each game). 
+    This is the total number of runs for the season, not the runs per game.
+    \item Determine how many games a team would win if Mike Trout took every at-bat (again, assume the team allows 720.9 runs).
+  \end{itemize}
+\end{itemize}
+
+\item Find the data for the 2019 Major League Baseball season.
+Use the Pythagorean Theorem for baseball to predict the number of wins for each MLB team.
+Compare your numbers with the actual number of wins for each MLB team. 
+Who overperformed the most?
+Who underperformed the most?
+
+\end{enumerate}
+
+
+\rule{6.5in}{0.005in}
+
+For additional help, check out:
+
+\begin{itemize}
+
+\item \href{https://www.youtube.com/watch?v=FLYsSqAHDYo}{\textcolor{blue}{Video: Read a CSV into R}}
+
+\item \href{https://baseballwithr.wordpress.com/2016/06/13/linear-weights-on-r/}{\textcolor{blue}{Video: Linear Weights on R}}
+
+\item \href{https://www.youtube.com/watch?v=gohQYZySyY8}{\textcolor{blue}{Video: R Notebooks Introduction Part 1: Background}}
+
+\item \href{https://www.youtube.com/watch?v=0dD2U7rrGaA}{\textcolor{blue}{Video: R Notebooks Introduction Part 2: Creating and Using R Notebooks}}
+
+\end{itemize}
+
+Further Reading:
+
+\begin{itemize}
+
+\item \href{https://sabr.org/research/new-formula-predict-teams-winning-percentage}{\textcolor{blue}{Article: A New Formula to Predict a Team's Winning Percentage}}
+
+
+\end{itemize}
+
+
+
+

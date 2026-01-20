@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+<h3>Common Issues (and some solutions):</h3>
+<ul>
+<li><em>"NA created by coercion" error:</em> This means that you tried to convert a variable to a numeric that R wasn't able to fully convert - check that the column doesn't have any strange formatting (commas, colons, etc.)</li>
+<li><em>CSS tag starts with .left:</em> I'm still not 100% sure what causes this to happen, but just replace ".left" with "td". When in doubt, try to format things in ways that have worked in the past!</li>
+<li></li>
+</ul>
+<h3>Useful R commands:</h3>
+<ul>
+<li><em>strsplit(string, sep):</em> Takes a string and splits it into separate strings everywhere it finds the character given in "sep"</li>
+<li><em>str_replace_all(string, pattern, replacement)</em>: Replaces all occurrences of 'pattern' in string with 'replacement'</li>
+<li><em>trimws(string, which = 'both')</em>: Removes all whitespace from both ends of the string.</li>
+<li><em><code>as.numeric(gsub(",", "", y))</code></em>&nbsp;Removes commas from numbers in the vector <em>y</em> and reads the result as numbers</li>
+</ul>
+<p>Note: To use some of these, you need to install the "stringr" package using the command: install.packages("stringr")</p>
+<p></p>
+<h3>Variable Types:</h3>
+<p>You may have noticed that in the .rmd file I shared, I use things such as as.factor() and as.numeric(). When should you use those functions?</p>
+<ul>
+<li><em>as.factor():</em> You have a categorical variable where there isn't any inherent order (such as conference)</li>
+<li><em>as.numeric():</em> You have a quantitative variable (such as points or score)</li>
+</ul>
+<h4>Remember: Don't just copy and paste the given code and expect it to work with new data. Make sure you actually understand what each line of code does- if you don't understand anything, just ask!</h4>
+<p>&nbsp;</p>
+</body>
+</html>
