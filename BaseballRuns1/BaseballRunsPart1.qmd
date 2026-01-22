@@ -1,0 +1,273 @@
+---
+title: "Exploring Some Ideas from Bill James"
+fontsize: 11pt
+format: html
+---
+
+**Purpose**: Each activity illustrates a little sports analytics, a little statistics, and a little python.
+
+* **Sports Analytics:**
+  Try to explain how runs are scored in baseball — that is, to try to find a statistic that explains as much run scoring as possible.
+
+* **Statistics:**
+  Regression
+
+* **Python:**
+  Introduction to Python, including:
+
+  * reading a CSV
+  * using a notebook
+  * linear modeling
+  * plotting
+
+**Demonstration — Runs Scored and Homeruns**: In this demonstration, we are going to examine the relationship between the number of homeruns hit and the number of runs scored.
+
+Using function terms, we will consider homeruns as the independent variable and runs as the dependent variable. Using statistical terms, homeruns is called the `explanatory variable` and runs is the `response variable`.
+
+It may seem arbitrary that we picked runs to be the response variable, but it is not. Ultimately, the goal of offense in baseball is to score as many runs as possible. We are trying to understand how runs are scored — or what statistic best explains how runs are scored — is it homeruns? batting average? stolen bases? or something else?
+
+The data given in `BaseballRuns.csv` shows offensive statistics for MLB teams from 2000–2005.
+
+Import the data into Python using:
+
+```{python}
+# pandas is used for data manipulation
+import pandas as pd 
+
+# read data
+bbr = pd.read_csv("data/BaseballRuns.csv") 
+```
+
+The table of data is now in a data frame called `bbr`.
+(Think of a data frame as an array on steroids — where the entries of the array can be objects more complicated than just numbers or strings.)
+
+We can get a summary of what is in this data frame:
+
+```{python}
+bbr.describe()
+```
+
+---
+
+## Variables in the Dataset
+
+* `lg` — league (AL for American League, NL for National League)
+* `team` — city of team (three-letter abbreviation)
+* `G` — number of games played (162 is normal)
+* `Ghome` — number of home games played (81 is normal)
+* `W` — number of wins
+* `L` — number of losses
+* `R` — number of runs scored
+* `AB` — number of at bats
+* `X1B` — number of singles
+* `X2B` — number of doubles
+* `X3B` — number of triples
+* `HR` — number of homeruns
+* `BB` — number of walks
+* `SO` — number of strikeouts
+* `SB` — number of stolen bases
+* `CS` — number of times caught stealing
+* `HBP` — number of batters hit by pitch
+* `SF` — number of sacrifice flies
+
+---
+
+## Creating and Plotting a Linear Model
+
+To plot `HR` versus `R`:
+
+```{python}
+import matplotlib.pyplot as plt
+
+plt.figure()
+plt.scatter(bbr["HR"], bbr["R"])
+plt.xlabel("Homeruns")
+plt.ylabel("Runs")
+plt.title("Runs vs Homeruns")
+plt.show()
+```
+
+To create the “best-fitting line” for this data:
+
+```{python}
+#%pip install statsmodels
+import statsmodels.formula.api as smf
+
+g = smf.ols("R ~ HR", data=bbr).fit()
+```
+
+This stores the line — and much information about this line — in the variable `g`.
+
+To see the intercept and slope of this line:
+
+```{python}
+g.params
+```
+
+To add this line to the plot:
+
+```{python}
+plt.figure()
+plt.scatter(bbr["HR"], bbr["R"])
+plt.xlabel("Homeruns")
+plt.ylabel("Runs")
+plt.title("Runs vs Homeruns")
+
+# Add regression line
+x = bbr["HR"]
+#y_hat = g.params[0] + g.params[1] * x
+y_hat = g.params["Intercept"] + g.params["HR"] * x
+plt.plot(x, y_hat)
+plt.show()
+```
+
+---
+
+## What Do We Mean by “Best-Fitting Line”?
+
+The equation for this best-fitting line is:
+
+```
+R = 452.358 + 1.815 · HR
+```
+
+We can use this equation (model) to predict how many runs a team scored based on how many homeruns they hit.
+
+For example, the 2000 Anaheim Angels (ANA) hit 236 homeruns, so our model predicts they scored 880.698 runs. They actually scored 864 runs. The difference between the predicted number of runs and the actual number of runs is called a residual. In this case, the residual is 16.698.
+
+We can use Python to calculate the predicted number of runs scored for each team:
+
+```{python}
+Pred = 452.358 + 1.814 * bbr["HR"]
+```
+
+And the residual for each team:
+
+```{python}
+Resid = Pred - bbr["R"]
+```
+
+A “best-fitting” line should somehow minimize these residuals — and our line actually minimizes the sum of the squares of the residuals — which is why it is often called the least-squares line.
+
+You can calculate the sum of the squares of the residuals:
+
+```{python}
+sum(Resid * Resid)
+```
+
+Now try a different line, such as:
+
+```
+R = 410 + 2 · HR
+```
+
+Then calculate the predicted values and residuals:
+
+```python
+Pred2 = 410 + 2.0 * HR
+Resid2 = Pred2 - R
+sum(Resid2 * Resid2)
+```
+
+The sum of the squares for these residuals will be more than the sum of the squares of the residuals for our original model.
+
+It is also called the regression line.
+
+---
+
+## Important Info Regarding This Linear Model
+
+To get more details about our best-fitting line:
+
+```{python}
+g.summary()
+```
+
+A couple of things to note in this summary:
+
+* The **R-squared value** (shown as `Multiple R-squared`) is 0.5177.
+  This means that 51.77% of the variation in runs can be explained by the number of homeruns.
+
+* The **Residual standard error** is 58.18.
+  This gives us an idea of the size of the average residual — for our purposes, you can think of it as the standard deviation of the residuals.
+
+For example, we would expect about 95% of residuals to be within the interval:
+
+```
+(−2 · 58.18, 2 · 58.18)
+```
+
+---
+
+## Group Activity
+
+Consider the following statistics:
+
+* **BA (batting average):**
+
+  ```
+  (1B + 2B + 3B + HR) / AB
+  ```
+
+* **SLG (slugging percentage):**
+
+  ```
+  (1B + 2·2B + 3·3B + 4·HR) / AB
+  ```
+
+* **OBP (on-base percentage):**
+
+  ```
+  (1B + 2B + 3B + HR + BB + HBP) /
+  (AB + BB + HBP + SF)
+  ```
+
+* **OPS (on-base plus slugging):**
+
+  ```
+  OPS = OBP + SLG
+  ```
+
+Determine the best-fit linear model for each of the following:
+
+* runs versus batting average
+* runs versus slugging percentage
+* runs versus on-base percentage
+* runs versus on-base plus slugging percentage
+
+Be sure each model includes:
+
+* the equation that predicts the number of runs scored
+* the R-squared value
+* the residual standard error
+
+Use Python to compute these new statistics. For example:
+
+```{python}
+bbr["BA"] = (bbr["1B"] + bbr["2B"] + bbr["3B"] + bbr["HR"]) / bbr["AB"]
+
+```
+
+Now you can use the variable `BA` to compute your linear model.
+
+Turn in your Python notebook in the appropriate assignment folder.
+
+---
+
+## When You’re Done
+
+Consider the following questions:
+
+* What variables can I make by combining these statistics to give a high R-squared value?
+
+* Download more recent data from baseballreference.com.
+  Do the R-squared values for our statistics change dramatically?
+
+* What is the most predictive (based on R-squared) value that you can make with only 2 columns from your original data frame?
+  What about 3 or 4?
+
+---
+
+These notes are adapted from Aaron Ekstrom and Abrielle Agron. 
+
+

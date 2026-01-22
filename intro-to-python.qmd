@@ -1,0 +1,128 @@
+---
+title: "Introduction to Python"
+format: html
+---
+
+## Key Commands
+- `Ctrl + Shift + k`: compile document
+- `Ctrl + Enter`: run code
+- `Ctrl + Shift + Enter`: run cell
+
+### Workflow
+Positron is good for data science because it provides tools that allows the user to interact with their data.  
+
+* Code can be sent to the `Console`    
+* Variables and Plots can be interacted with in the `Session`   
+* Reports can be tracked in the `Viewer`  
+* If you need function documentation, `?YOUR_FUNCTION` opens up the help menu. 
+
+---
+
+### Basics
+
+**Variable Assignment.** Unlike in R, you can't use the `<-` operator. You must use the `=` operator to assign variables. 
+
+```{python}
+x = 2
+y = 3
+z = x + y 
+```
+
+**Data Types.** Here are some common data types. 
+
+```{python}
+x = 10           # int
+pi = 3.14        # float
+is_active = True # bool
+name = "Bob"     # string
+```
+
+**Sequence Types**. We can aggregate data into lists. 
+
+```{python}
+nums = [1, 2, 3, 4]            # list of integers
+cities = ["TUS", "PHX", "LAS"] # list of strings
+nums[0]
+```
+
+**Indexing.** We can access the values within a list by indexing. Indexing is 0-based, instead of 1-based like in R.
+```python
+nums[0] # 1
+nums[1] # 2
+nums[-1] # 4
+```
+
+**Importing Packages**. On its own Python is often lacking. To access more powerful tools, we have to import packages. By picking and choosing functions a la carte, Python can remain lightweight and flexible. 
+
+```{python}
+import pandas as pd # data manipulation
+```
+
+Every time you access an object from a package, you must call the package. Because of that, we usually give packages a nickname (this is called `import aliasing`). 
+
+To access objects from the package, we reference the package. For example, `DataFrame` is not an object in base Python. By importing the `pandas` package, we can access it as such: 
+
+```python
+df = pd.DataFrame({}) # create empty data frame
+```
+
+#### Data Frames
+The most common data type in data science is the data frame. It is a tabular data type that allows you to record similar information across different individuals. 
+
+```{python}
+# Example
+df = pd.DataFrame({
+    "team": ["BOS", "NYY", "LAD", "CHC"],
+    "wins": [95, 102, 98, 88],
+    "runs": [820, 870, 845, 790]
+})
+print(df)
+```
+
+---
+
+## Some More Quarto
+
+**Code Fences (Code Chunks).** Code chunks are run by Quarto. They're indicated by pairs of three back ticks. They also indicate what programming language should be used.  
+
+```{python}
+print("This is Python in a code chunk.")
+```
+
+**Code Chunk Parameters.** You don't always want to show your code. It can clutter your report. For example, people are often more interested in your figure than how you generated it. Code chunks have parameters that can modify how the code is run or shown in the report.
+
+Here are some common code chunk parameters: 
+
+* `#| echo: false`: (hide code)  
+* `#| eval: false`: (skip code and do not run)
+* `#| warning: false`: (hide warning messages)
+* `#| message: false`: (hide messages)  
+
+```{python}
+#| echo: false
+#| eval: false
+print("Example: This code is from Python, but no code is shown in the report. ")
+```
+
+**Inline Code**. You can similarly put code inside your sentences. It works the same way as code chunks, but instead of using three back ticks, you use one. This can be useful in a report. 
+
+```{python}
+#| echo: false
+
+# Grade Weightings
+quiz_wt = 0.9
+homework_wt = 0.1
+
+# Current Grades
+quiz_grade = 80
+homework_grade = 85
+```
+
+My grade in the class is `{python} quiz_wt * quiz_grade + homework_wt * homework_grade`%.
+
+You can even put it inside a math environment: 
+$$
+3 \times 2 = `{python} 3 * 2`
+$$
+
+
