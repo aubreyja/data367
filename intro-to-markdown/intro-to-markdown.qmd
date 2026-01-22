@@ -1,0 +1,48 @@
+---
+title: "Introduction to Markdown"
+format: html
+---
+
+## Key Commands
+- `Ctrl + Shift + k`: compile document
+- `Ctrl + Enter`: run code
+- `Ctrl + Shift + Enter`: run cell
+
+The only way to learn is by doing. You are encouraged to vandalize this document. As the instructor goes through the document, feel free to play with the document yourself. Make your own examples, re-compile the document to see the results. 
+
+## Introduction to Markdown
+
+Use `# HEADING` to make a heading.
+
+Use `## SUBHEADING` to make a subheading.
+
+Use `**TEXT**` to make text **bold**.
+
+Use `_TEXT_` or `*TEXT*` to make text *italic*.
+
+Use `$E = MC^2$` to write math inline: $E = MC^2$.
+
+Use `$$ E = MC^2 $$` to write math in display mode: $$E = MC^2$$
+
+Use \`CODE\` to show code: `x = 2 + 2` (This does not run code).
+
+Use backslash (`\`) to escape special characters (e.g. \$, \\, \*, \_, \`)
+
+My favorite Greek letter is \\alpha
+
+Use `[TEXT](URL)` to make a [hyperlink](https://quarto.org/)
+
+Use `![CAPTION](URL)` to make an image. 
+
+![University of Arizona](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbmN9RQvFA_qWu8G0IZAV4JB3ozYXw5wImCg&s){width=200}
+
+---
+
+### Exercise
+Write a brief summary of your favorite sports player. Use all of the markup syntax above (e.g. headings, bold, italic, hyperlinks, pictures). 
+
+Convert this document into a PDF.
+
+### Example
+**Isaac Newton** was a _precocious_ child and was a fellow at [Cambridge University](https://en.wikipedia.org/wiki/Isaac_Newton). He is famous for his equation: $$F = MA$$. 
+
