@@ -90,7 +90,6 @@ plt.show()
 To create the “best-fitting line” for this data:
 
 ```{python}
-#%pip install statsmodels
 import statsmodels.formula.api as smf
 
 g = smf.ols("R ~ HR", data=bbr).fit()
@@ -115,8 +114,7 @@ plt.title("Runs vs Homeruns")
 
 # Add regression line
 x = bbr["HR"]
-#y_hat = g.params[0] + g.params[1] * x
-y_hat = g.params["Intercept"] + g.params["HR"] * x
+y_hat = g.params[0] + g.params[1] * x
 plt.plot(x, y_hat)
 plt.show()
 ```
@@ -179,8 +177,8 @@ It is also called the regression line.
 
 To get more details about our best-fitting line:
 
-```{python}
-g.summary()
+```python
+summary(g)
 ```
 
 A couple of things to note in this summary:
@@ -243,9 +241,8 @@ Be sure each model includes:
 
 Use Python to compute these new statistics. For example:
 
-```{python}
+```python
 bbr["BA"] = (bbr["1B"] + bbr["2B"] + bbr["3B"] + bbr["HR"]) / bbr["AB"]
-
 ```
 
 Now you can use the variable `BA` to compute your linear model.
