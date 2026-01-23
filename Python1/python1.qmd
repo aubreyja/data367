@@ -52,36 +52,19 @@ I acknowledge the use of \[AI system name(s)\] to \[describe how the tool was us
 
 ### Accept the assignment and clone your repository
 
-1.  **Accept the assignment** using the GitHub Classroom link provided on the course site.
-2.  After acceptance, you will have your own private repository on GitHub.
+**Accept the assignment** using the GitHub Classroom link provided on the course site. After acceptance, you will have your own private repository on [GitHub](https://github.com "Github").
 
-Now clone it to your computer.
+Now clone the assignment to your computer. To do this in Positron, first open positron. You can either click **New** in the upper left hand corner, and then choose **New Folder From Git...**, or you can choose **New Folder From Git** in the center of the screen:
 
-#### Option A: Command line (recommended)
+![](images/new-from-homescreen.png){fig-align="center" width="423"}
 
-Open a terminal and run:
+Next you will see this dialogue box:
 
-``` bash
-# 1) Choose a folder where you keep course work
-cd ~/Documents   # change as needed
+![](images/new-folder-from-git.png){fig-align="center" width="364"}
 
-# 2) Clone your GitHub Classroom repo (replace URL with YOUR repo)
-git clone https://github.com/<ORG>/<REPO>.git
+In the box below "Git repository URL" paste your GitHub Classroom repository URL. In the box below "Create folder as a subfolder of" decide where on your computer you would like to keep the code for this class, type in that directory, and click OK.
 
-# 3) Enter the repo
-cd <REPO>
-
-# 4) Confirm you are on the main branch (or whatever your repo uses)
-git status
-```
-
-#### Option B: Positron
-
--   In Positron: **File → New Project** (or **Open Folder**)
--   Choose: **Clone Git Repository**
--   Paste your GitHub Classroom repository URL
--   Choose a local folder and click **Clone**
--   Open the `.qmd` file in the editor
+Now open the python1`.qmd` file in the editor
 
 ------------------------------------------------------------------------
 
@@ -89,41 +72,24 @@ git status
 
 ### Required packages
 
-We will use:
+We will use the following python packages in this assignment:
 
 -   `pandas` and `numpy` (core data analysis)
 -   `matplotlib` (plots)
--   `pybaseball` (baseball data access)
 -   `statsmodels` (simple regression and statistical summaries)
 
-If you do not have them installed, using one of the following commands may do it:
-
-#### Option A: `pip`
-
-``` bash
-pip3 install pandas numpy matplotlib pybaseball statsmodels
-```
-
-#### Option B: `conda` / `mamba`
-
-``` bash
-conda install pandas numpy matplotlib statsmodels
-pip3 install pybaseball
-```
+If you do not have them installed, you will find out when you try executing the code below. If you get an error message that a package is missing, then install it using the [instructions for your system](https://packaging.python.org/en/latest/tutorials/installing-packages/).
 
 ### Import packages
 
-Python’s standard library is intentionally small. Most data analysis work relies on **external packages** (also called *modules* or *libraries*) that extend Python with tools for data handling, visualization, and statistical modeling. Before you can use a package, you must **import** it.
+Every python script will begin by *importing* packages. A python package is a library of code that contains certain tools. Python’s standard library is intentionally small. So most data analysis work relies on **external packages** (also called *modules* or *libraries*) that extend Python with tools for data handling, visualization, and statistical modeling. Before you can use a package, you must **import** it.
 
-In the code block below, we import the packages needed for this analysis.
+In the code block below, we import the packages needed for this assignment. Run this cell.
 
 ```{python}
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
-# Baseball data library
-from pybaseball import batting_stats
 
 # Basic regression
 import statsmodels.api as sm
@@ -163,72 +129,90 @@ When we print `__version__`, we are verifying:
 
 -   **Compatibility:** That we are using a version of the library that supports the features we plan to use.
 
-We also run a quick `batting_stats` call for a single year to ensure your computer can successfully connect to the Baseball-Reference/FanGraphs servers.
-
-```{python}
-# Test pybaseball connection with a small data pull
-try:
-    test_data = batting_stats(2023).head(3)
-    print("pybaseball connection: SUCCESS")
-except Exception as e:
-    print("pybaseball connection: FAILED")
-    print(e)
-```
-
 ------------------------------------------------------------------------
 
-## A baseball dataset: MLB team batting stats
+## A [Baseball](https://en.wikipedia.org/wiki/Baseball) Dataset: [MLB](https://en.wikipedia.org/wiki/Major_League_Baseball) team batting stats
 
-We will use `pybaseball.batting_stats(year)` which returns season-level **team batting** stats for MLB.
+The data given in `BaseballRuns.csv` shows offensive statistics for MLB teams from 2000–2005.
 
--   Each row is a team-season (one team in one year).
--   Columns include common batting measures like **OBP** (on-base percentage), **SLG** (slugging), **BB%** (walk rate), **K%** (strikeout rate), and **R** (runs scored).
-
-### Load the data
-
-Pick a year. Use a recent season so it feels current (but any year supported by the library is fine).
+Import the data into Python using the following code. Run this cell.
 
 ```{python}
-YEAR = 2024  # you may change this
+# Read the data. Notice that
+## 1. We use the "read_csv" function from the pandas library that we imported above with the alias "pd"
+## 2. This returns what is called a "data frame" which we have given the name bbr
 
-df = batting_stats(YEAR)
+bbr = pd.read_csv("data/BaseballRuns.csv") 
 ```
 
-### Inspect the columns and missingness
+## Variables in the Dataset
 
-In data analysis, we never assume the data is "clean" just because it loaded. We use exploratory functions to orient ourselves. Here is a breakdown of the inspection steps we use in the assignment and why they are essential.
+The first thing you must understand about any data set is what information it contains. In the data set we just loaded we have the following varaibles:
 
-`df.head()`
+-   `lg` — league (AL for American League, NL for National League)
+-   `team` — city of team (three-letter abbreviation)
+-   `G` — number of games played (162 is normal)
+-   `Ghome` — number of home games played (81 is normal)
+-   `W` — number of wins
+-   `L` — number of losses
+-   `R` — number of runs scored
+-   `AB` — number of at bats
+-   `X1B` — number of singles
+-   `X2B` — number of doubles
+-   `X3B` — number of triples
+-   `HR` — number of homeruns
+-   `BB` — number of walks
+-   `SO` — number of strikeouts
+-   `SB` — number of stolen bases
+-   `CS` — number of times caught stealing
+-   `HBP` — number of batters hit by pitch
+-   `SF` — number of sacrifice flies
+
+### Inspect the data
+
+In data analysis, we never assume the data is "clean" just because it loaded. We use exploratory functions to orient ourselves. Here is a breakdown of some data inspection functions we can use. You can use some or all of these to get a sense for a new data set, and you will learn other useful data inspection functions and techniques as you gain experience.
+
+`bbr.head()`
 
 **What it does**: Returns the first 5 rows of the DataFrame.
 
 **Why do it**: This is your first "look" at the data. It confirms that the columns aligned correctly and gives you a sense of the data types (e.g., are the team names strings? are the stats decimals?).
 
 ```{python}
-df.head()
+bbr.head()
 ```
 
-`df.shape` 
+`bbr.shape`
 
 **What it does**: Returns a tuple representing the dimensionality: (rows, columns). (Note: This is an attribute, not a function, so it doesn't use parentheses).
 
 **Why do it**: It tells you the scale of your dataset. If you expected 30 teams but see 600 rows, you know you’ve likely pulled multi-year data or individual player stats instead of team stats.
 
 ```{python}
-df.shape
+bbr.shape
 ```
 
-`df.columns` 
+`bbr.columns`
 
 **What it does**: Lists the names of every column in the dataset.
 
 **Why do it**: `pybaseball` datasets often have over 300 columns. You need the exact spelling and capitalization of column names (e.g., is it R or runs?) to select them later without causing KeyErrors.
 
 ```{python}
-df.columns
+bbr.columns
 ```
 
-`df.isna().sum().sort_values(ascending=False).head(15)` 
+`bbr.describe()`
+
+**What it does**: We can get a summary of what is in this data frame. For each numerical variable gives total count, and gives mean, standard deviation, and quartiles.
+
+**What do it**: Gives an initial sense of the scope of the data and some basic summary statistics.
+
+```{python}
+bbr.describe()
+```
+
+`bbr.isna().sum().sort_values(ascending=False).head(15)`
 
 This is a "chained" command that performs several operations at once to check for missingness:
 
@@ -243,9 +227,10 @@ This is a "chained" command that performs several operations at once to check fo
 **Why do it**: Missing data can break your math. If a column you plan to use as a predictor is 50% empty, your regression results will be misleading or your code will crash. This identifies those landmines early.
 
 ```{python}
-df.isna().sum().sort_values(ascending=False).head(15)
+bbr.isna().sum().sort_values(ascending=False).head(15)
 ```
 
+The above output tells us none of the variables have any empty data.
 
 ## The Heart of the Analysis: Asking the Right Questions
 
@@ -255,287 +240,683 @@ In sports analytics, we aren't just "calculating numbers"; we are trying to solv
 
 To be a good sports data scientist, you need to understand your sport, what data is available, and how to analyze it. Let's now talk a bit about data analysis. While modern "black-box" machine learning models are popular, they aren't always necessary. Often, a clean **correlation** or a **simple linear regression** provides the clarity needed to make a multi-million dollar decision.
 
-### Our Example Question: OBP vs. SLG
+### Our Example Question: R vs HR
 
-For decades, the "Moneyball" revolution in baseball prioritized **On-Base Percentage (OBP)** over traditional stats like Batting Average. However, in the modern "Power and Precision" era, many teams prioritize **Slugging Percentage (SLG)** to maximize damage per hit.
+If you're not familiar with baseball, a *run* (**R**) in baseball is any point scored when a player touches home plate safely.
 
-We want to know: **In the current MLB landscape, which of these two "building blocks" of hitting is more strongly associated with a team’s ability to score runs?**
+![](images/paste-1.png){fig-align="center"}
 
-Let's see how we can start to answer this question with some elementary statistics.
+Whichever team ends the game with the most runs wins the game. So, predicting who will win a baseball game means predicting which team will score the most runs.
 
----
+Now, a *home run* (**HR**) is a specific type of play where the batter hits the ball over the fence (or rounds all bases) to score at least one run. A single home run can result in 1 to 4 runs.
 
-### Correlation and Regression
+So, every home run scores at least one run, but not every run is a homerun. However, one would think that a team that scores more home run is likely to score more runs over all.
 
-We need to understand two fundamental tools:
+## Creating and Plotting a Linear Model
 
-#### 1. Pearson Correlation ()
-
-For two numeric variables (X) and (Y), the **Pearson correlation** (r) measures linear association:
-
--   ($r \approx 1$): strong positive linear relationship
--   ($r \approx -1$): strong negative linear relationship
--   ($r \approx 0$): little to no linear relationship
-
-Important caveats:
-
--   correlation does **not** imply causation,
--   correlation can be distorted by outliers,
--   correlation only measures **linear** association.
-
-#### 2. Simple Linear Regression (OLS)
-
-A simple regression models an outcome (Y) as:
-
-$$Y = \beta\_0 + \beta\_1 X + \varepsilon.$$
-
-Here: 
-
-- $Y$ will be `R` (runs scored), 
-- $X$ will be `OBP` or `SLG`.
-
-Regression gives: 
-
-- an estimated slope ($\hat{\beta}\_1$), 
-- an ($R^2$) value (how much variance in $Y$ is explained by the model), 
-- p-values and confidence intervals (useful, but interpret cautiously — this is observational data).
-
-While correlation tells us *how strong* the link is, regression tells us the *rate of change*. It gives us a "best-fit" line.
-
-## The Analysis
-
-Let's use these tools to shed some light on the question above. To do this, we will first create a smaller analysis dataset to work with. 
-
-### Why we create a focused analysis dataset
-
-The raw data from `pybaseball` is incredibly comprehensive, often containing over 300 different statistical categories. While this is great for deep research, it can make simple analysis cumbersome. We create a smaller "analysis dataset" for several key reasons:
-
-1. **Reducing Noise:** It is easier to focus on the relationship between Runs and OBP if you aren't scrolling past columns for "Inside-the-park HR" or "Catcher Interference." A focused subset creates a cleaner workspace.
-2. **Memory and Speed:** While 30 MLB teams is a small amount of data, professional sports datasets often have millions of rows. Filtering for only the columns you need saves memory and keeps your code running fast.
-3. **Preventing Errors:** We use the `.copy()` method to create a brand-new, independent object in memory. This avoids the common "SettingWithCopy" warning in pandas, ensuring that changes we make to our analysis data don't accidentally affect the original "master" dataset.
-4. **Ensuring Data Integrity:** Statistical models like Linear Regression cannot handle missing values (`NaN`). By isolating our variables and running `.dropna()`, we ensure that every row in our final table is complete and ready for mathematical modeling.
+To investigate this hunch, let us plot `HR` versus `R`:
 
 ```{python}
-# 1. Define a list of strings containing the exact column names we want to keep.
-# 'R' is our target variable (what we want to predict).
-# 'OBP' and 'SLG' are our primary predictors.
-# 'BB%' and 'K%' are additional variables for potential exploration.
-cols = ["Team", "R", "OBP", "SLG", "BB%", "K%"]
+# Import the pyplot module from the matplotlib library.
+# matplotlib is a very common Python library used for creating plots and charts.
+# The 'pyplot' part provides a simple interface for making figures.
+# We import it as 'plt' by convention, to keep later commands short and readable.
+import matplotlib.pyplot as plt
 
-# 2. Filter the original 'df' to keep only those columns.
-# We use .copy() to create a new, independent object in memory.
-# Without .copy(), 'data' would just be a "view" of 'df', 
-# which can lead to a "SettingWithCopyWarning" when we try to clean or modify it.
-data = df[cols].copy()
+# Create a new, empty figure (a plotting window).
+# Think of a "figure" as a blank piece of graph paper where we can draw a plot.
+# If you do not explicitly create a figure, matplotlib will still make one,
+# but being explicit is good practice, especially as plots get more complex.
+plt.figure()
 
-# 3. Display the first 5 rows of our new, smaller dataset to verify the filter worked.
-data.head()
+# Create a scatter plot.
+# A scatter plot shows individual data points as dots.
+#
+# bbr["HR"] provides the values for the x-axis (horizontal axis).
+# In this case, these are the number of home runs.
+#
+# bbr["R"] provides the values for the y-axis (vertical axis).
+# In this case, these are the number of runs scored.
+#
+# Each row of the data produces one dot on the plot.
+plt.scatter(bbr["HR"], bbr["R"])
 
-# 4. Handle missing data. 
-# The .dropna() method removes any row that contains at least one missing value (NaN).
-# In team-level season stats, missing data is rare, but this is a vital "safety" step.
-data = data.dropna()
+# Label the x-axis.
+# This text will appear below the horizontal axis,
+# helping the reader understand what the x-values represent.
+plt.xlabel("Homeruns")
 
-# 5. Check the final shape of our cleaned dataset.
-# This confirms how many teams (rows) are left after dropping missing values.
-data.shape
-```
+# Label the y-axis.
+# This text will appear to the left of the vertical axis,
+# explaining what the y-values represent.
+plt.ylabel("Runs")
 
+# Add a title to the plot.
+# The title appears at the top of the figure and summarizes
+# what relationship the plot is showing.
+plt.title("Runs vs Homeruns")
 
-### Compute correlations
-
-We begin by checking the correlation coefficient ($r$) for both metrics. This gives us a quick numerical "snapshot" of which variable shares a stronger linear link with run production.
-
-```{python}
-# Calculate Pearson correlation between Runs and our two main predictors
-corr_obp = data["R"].corr(data["OBP"])
-corr_slg = data["R"].corr(data["SLG"])
-
-print(f"Correlation (Runs vs OBP): {corr_obp:.3f}")
-print(f"Correlation (Runs vs SLG): {corr_slg:.3f}")
-```
-
-Write 2–4 sentences interpreting these values in context.
-
-**Your interpretation (edit this):**
-
--   Correlation(R, OBP) = `{{YOUR VALUE}}`
--   Correlation(R, SLG) = `{{YOUR VALUE}}`
-
-Interpretation: Write 2–4 sentences interpreting these values. Which one is higher? Does a high correlation here guarantee that one causes the other?
-
-## Scatterplots with fitted regression lines
-
-Before fitting any regression model, it is essential to **look at the data**. Summary statistics and correlation coefficients can be misleading (see *Anscombe’s Quartet*). Scatterplots allow us to check whether a relationship is genuinely linear, whether it is driven by a few extreme observations, and whether a linear model is even reasonable.
-
-By overlaying a fitted regression line on the scatterplot, we can visually assess how well a single statistic explains run scoring across teams.
-
-#### Runs vs OBP
-
-```{python}
-# --- Visualizing the Relationship: OBP vs Runs ---
-
-# 1. Define our axes
-# We assign our independent variable (Predictor) to x and dependent (Target) to y.
-x = data["OBP"]
-y = data["R"]
-
-# 2. Create the figure object
-plt.figure(figsize=(8, 5))
-
-# 3. Create the Scatterplot
-# 'alpha' makes the points slightly transparent, which helps if points overlap.
-plt.scatter(x, y, alpha=0.7, label="Actual Teams")
-
-# 4. Add Labels and Title
-# Always label your axes! Use f-strings to keep the title dynamic to the YEAR.
-plt.xlabel("On-Base Percentage (OBP)")
-plt.ylabel("Runs Scored (R)")
-plt.title(f"Correlation: Team OBP vs. Total Runs ({YEAR})")
-
-# 5. Add a Best-Fit Line (Simple Linear Regression)
-# np.polyfit calculates the slope (m) and intercept (b) for a 1st-degree polynomial (a line).
-m, b = np.polyfit(x, y, 1)
-
-# Create a sequence of 100 points from the min OBP to the max OBP to draw the line.
-xline = np.linspace(x.min(), x.max(), 100)
-yline = m * xline + b
-
-# Plot the line on top of the scatterplot. 
-plt.plot(xline, yline, color="red", linestyle="--", label="Regression Line")
-
-# 6. Add a Legend and Grid
-# A legend explains what the dots vs. the line represent.
-plt.legend()
-plt.grid(True, linestyle=':', alpha=0.6)
-
-# 7. Display the final plot
+# Display the plot on the screen.
+# Without this line, the plot may not appear,
+# especially when running the code as a script.
 plt.show()
 ```
 
-#### Runs vs SLG
+We can see that there seems to be a general positive correlation. That is, as the number of homeruns increases (along the x-axis), the number of runs tends to increase as well.
+
+We can now create the “best-fitting line” for this data:
 
 ```{python}
-# --- Visualizing the Relationship: SLG vs Runs ---
+# Import the formula-based interface from the statsmodels library.
+#
+# statsmodels is a Python library used for statistical modeling.
+# It provides tools for fitting linear regression models, hypothesis tests,
+# and other classical statistical methods.
+#
+# The 'formula.api' submodule allows us to specify models using
+# a formula syntax that looks very similar to what you might see in R or statistics textbooks.
+#
+# We import it as 'smf' by convention, which is short for "statsmodels formula".
+import statsmodels.formula.api as smf
 
-# 1. Define our axes
-# We now switch our predictor to Slugging Percentage (SLG).
-# The outcome (y) remains Runs Scored.
-x_slg = data["SLG"]
-y_runs = data["R"]
+# Fit a linear regression model using Ordinary Least Squares (OLS).
+#
+# The string "R ~ HR" is the model formula:
+#   - 'R' is the response (dependent) variable.
+#   - 'HR' is the predictor (independent) variable.
+#   - The '~' symbol means "is modeled as a function of".
+#
+# In words, this model says:
+#   "We are modeling Runs (R) as a linear function of Home Runs (HR)."
+#
+# The 'data=bbr' argument tells statsmodels where to find the variables
+# named in the formula. In this case, 'bbr' is a DataFrame that contains
+# columns named 'R' and 'HR'.
+#
+# smf.ols(...) creates the regression model object,
+# but it does NOT actually compute the regression yet.
+#
+# The '.fit()' method runs the regression calculations
+# and estimates the slope, intercept, and other statistics.
+#
+# The fitted model is stored in the variable 'g'.
+g = smf.ols("R ~ HR", data=bbr).fit()
+```
 
-# 2. Create the figure object
-# Using the same figsize ensures your report looks uniform.
-plt.figure(figsize=(8, 5))
+This stores the line — and much information about this line — in the variable `g`. This command itself doesn't return any output, but we can see the intercept and slope of this line by calling the `params` method of `g`:
 
-# 3. Create the Scatterplot
-# We use a different color (green) to visually distinguish SLG from OBP.
-plt.scatter(x_slg, y_runs, alpha=0.7, color="green", label="Actual Teams")
+```{python}
+# Access the estimated parameters (coefficients) of the fitted regression model.
+#
+# 'g' is the fitted regression model that we created earlier using .fit().
+# After fitting the model, statsmodels stores the estimated numerical results
+# inside this object.
+#
+# The '.params' attribute contains the regression coefficients.
+# These are the numbers that define the fitted line.
+#
+# For a simple linear regression like R ~ HR, this will typically include:
+#   - 'Intercept': the estimated value of R when HR = 0
+#   - 'HR': the estimated change in R for a one-unit increase in HR
+#
+# Conceptually, these parameters describe the equation of the fitted line:
+#   R ≈ Intercept + (HR coefficient) × HR
+#
+# When you run this line in Python, it will display the coefficients,
+# usually as a labeled pandas Series.
+g.params
+```
 
-# 4. Add Labels and Title
+We add this line to the plot as follows:
+
+```{python}
+# Create a new, empty figure for our plot.
+# As before, a figure is the "canvas" on which we draw our visualization.
+plt.figure()
+
+# Create a scatter plot of the original data.
+# Each point represents one observation (for example, one team or one season).
+#
+# The x-values come from the "HR" column (home runs).
+# The y-values come from the "R" column (runs scored).
+plt.scatter(bbr["HR"], bbr["R"])
+
+# Label the x-axis so the reader knows what the horizontal values represent.
+plt.xlabel("Homeruns")
+
+# Label the y-axis so the reader knows what the vertical values represent.
+plt.ylabel("Runs")
+
+# Add a title that summarizes what relationship is being visualized.
+plt.title("Runs vs Homeruns")
+
+# --------------------------------------------------
+# Add the fitted regression line to the scatterplot
+# --------------------------------------------------
+
+# Store the x-values (home runs) in a variable.
+# This makes the next steps easier to read and understand.
+x = bbr["HR"]
+
+# Compute the predicted y-values using the fitted regression model.
+#
+# g.params contains the estimated regression coefficients:
+#   g.params[0] is the intercept (the predicted number of runs when HR = 0)
+#   g.params[1] is the slope (how much runs increase for each additional home run)
+#
+# The regression line has the form:
+#   y_hat = intercept + slope * x
+#
+# Here, y_hat represents the model's predicted runs for each value of HR.
+y_hat = g.params["Intercept"] + g.params["HR"] * x
+
+# Plot the regression line on the same figure.
+#
+# plt.plot draws a line instead of points.
+# Because we use the same x-values as the scatter plot,
+# the line overlays the data and shows the fitted linear trend.
+plt.plot(x, y_hat)
+
+# Display the completed plot on the screen.
+# This shows both the original data (points) and the fitted regression line.
+plt.show()
+```
+
+------------------------------------------------------------------------
+
+## What Do We Mean by “Best-Fitting Line”?
+
+The equation for this best-fitting line is:
+
+```         
+R = 452.358 + 1.815 · HR
+```
+
+We can use this equation (model) to predict how many runs a team scored based on how many homeruns they hit.
+
+For example, the 2000 Anaheim Angels (ANA) hit 236 homeruns, so our model predicts they scored 880.698 runs. They actually scored 864 runs. The difference between the predicted number of runs and the actual number of runs is called a *residual*. In this case, the residual is 16.698.
+
+We can use Python to calculate the predicted number of runs scored for each team:
+
+```{python}
+# Create predicted values using a linear regression equation.
+#
+# This line computes a predicted number of runs for each value of HR
+# using a specific linear formula:
+#
+#   Predicted Runs = 452.358 + 1.814 × Home Runs
+#
+# Here:
+#   - 452.358 is the intercept (the predicted number of runs when HR = 0)
+#   - 1.814 is the slope (the increase in runs for each additional home run)
+#   - bbr["HR"] is a column of home run values
+#
+# Because bbr["HR"] is a pandas Series (a whole column of data),
+# this calculation is done element-by-element.
+# The result is a new pandas Series of predicted run values,
+# one for each row in the dataset.
+#
+# IMPORTANT: This line does NOT return or display anything by itself.
+#
+# Why?
+# - The result is not assigned to a variable.
+# - It is not printed using print().
+# - It is not the final line of a notebook cell whose output is automatically shown.
+#
+# In Python, calculations only produce visible output if you:
+#   (1) assign them to a variable,
+#   (2) explicitly print them, or
+#   (3) return them from a function.
+#
+# As written, Python performs the calculation and then immediately discards the result.
+Pred = 452.358 + 1.814 * bbr["HR"]
+```
+
+Although this line of Python code does not print anything for us to see, in Positron you can inspect the values in `Pred` in the **VARIABLES** tab under **SESSION**:
+
+![](images/data-viewer.png){fig-align="center"}
+
+And the residual for each team:
+
+```{python}
+Resid = Pred - bbr["R"]
+```
+
+A “best-fitting” line should somehow minimize these residuals — and our line actually minimizes the sum of the squares of the residuals — which is why it is often called the least-squares line.
+
+![](images/residuals.png){fig-align="center"}
+
+We now calculate the *sum of the squares of the residuals*:
+
+```{python}
+sum(Resid * Resid)
+```
+
+But if we try a different line, such as:
+
+```{python}
+Pred2 = 410 + 2 * bbr["HR"]
+```
+
+Then calculate the predicted values and residuals:
+
+```{python}
+Resid2 = Pred2 - bbr["R"]
+sum(Resid2 * Resid2)
+```
+
+The sum of the squares for these residuals will be more than the sum of the squares of the residuals for our original model.
+
+The best-fit line is also called the regression line. Remember: it is called the best-fit line because it minimizes the sum of the squares of the residuals.
+
+------------------------------------------------------------------------
+
+## Important Info Regarding This Linear Model
+
+To get more details about our best-fitting line:
+
+```{python}
+# Display a detailed statistical summary of the fitted regression model.
+#
+# 'g' is a fitted statsmodels regression object (created using .fit()).
+#
+# The .summary() method generates a formatted table that includes:
+#   - The estimated regression coefficients (intercept and slope)
+#   - Standard errors of the estimates
+#   - t-statistics and p-values for hypothesis tests
+#   - R-squared and adjusted R-squared values
+#   - Information about the sample size and model fit
+#
+# This output is meant for human interpretation.
+# It prints a nicely formatted report rather than returning a simple number.
+#
+# In Jupyter or Quarto, this summary will be displayed automatically
+# when this line is the last line of a code cell.
+g.summary()
+```
+
+The most important thing to look at right now is the **R-squared value** which is 0.518. This means that 51.8% of the variation in runs can be explained by the number of homeruns.
+
+The **Residual standard error** is another important piece of information, but not always printed in `statsmodels` summary table. The residual standard error gives us an idea of the size of the average residual. For our purposes, you can think of it as the standard deviation of the residuals. If it is not displayed in the table above you can compute it with the following:
+
+```{python}
+# Compute the residual standard error of the regression model.
+#
+# 'g' is a fitted statsmodels OLS regression object.
+#
+# In statsmodels:
+#   - g.scale stores the estimated variance of the residuals (σ̂²),
+#     not the standard deviation.
+#
+# The residual standard error (often called RSE in statistics textbooks)
+# is the square root of this variance:
+#
+#   RSE = sqrt(σ̂²)
+#
+# We use np.sqrt(...) to take the square root of g.scale.
+# The result is a single number that measures the typical size
+# of the model's prediction errors (in units of the response variable, Runs).
+#
+rse = np.sqrt(g.scale)
+print(rse)
+```
+
+This means that we would expect about 95% of residuals to be within the interval:
+
+```         
+(−2 · 58.18, 2 · 58.18)
+```
+
+------------------------------------------------------------------------
+
+## Your Turn: Building and Evaluating New Baseball Statistics
+
+So far, we have fit a linear model predicting **Runs (R)** using an existing statistic.\
+Now you will **create new statistics**, fit linear models using them, and evaluate how well they predict runs scored.
+
+We will work with the following commonly used baseball statistics.
+
+### Definitions
+
+-   **BA (Batting Average):**
+
+    $$
+    \mathrm{BA}=\frac{1B+2B+3B+HR}{AB}
+    $$
+
+-   **SLG (Slugging Percentage):**
+
+    $$
+    \mathrm{SLG}=\frac{1B+2\cdot 2B+3\cdot 3B+4\cdot HR}{AB}
+    $$
+
+-   **OBP (On-Base Percentage):**
+
+    $$
+    \mathrm{OBP}=\frac{1B+2B+3B+HR+BB+HBP}{AB+BB+HBP+SF}
+    $$
+
+-   **OPS (On-base Plus Slugging):**
+
+    $$
+    \mathrm{OPS}=\mathrm{OBP}+\mathrm{SLG}
+    $$
+
+------------------------------------------------------------------------
+
+## What to produce for each new statistics
+
+For each of the four relationships below, you must produce all of the following:
+
+1.  **A scatter plot** of runs versus the statistic.
+2.  **A best-fit regression line** added to the scatter plot.
+3.  **A regression equation** that predicts runs scored
+4.  **R-squared (**$R^2$)
+5.  **Residual Standard Error (RSE)**
+6.  Report:
+    1.  The regression equation (using the intercept and slope)
+    2.  The $R^2$ value and **1-2 sentences interpreting it in context**
+    3.  The RSE value and **1-2 sentences interpreting it in context**
+
+------------------------------------------------------------------------
+
+## Example: Batting Average (BA)
+
+We will do **batting average together**, start to finish. Use this as a model for the remaining parts.
+
+### Create Batting Average
+
+```{python}
+#| label: create-ba
+#| echo: true
+
+# Batting Average (BA) measures how often a team gets a hit per at-bat.
+# We compute it using singles, doubles, triples, and home runs, divided by at-bats.
+bbr["BA"] = (bbr["1B"] + bbr["2B"] + bbr["3B"] + bbr["HR"]) / bbr["AB"]
+```
+
+### Scatter Plot of Runs vs BA
+
+```{python}
+#| label: plot-r-vs-ba
+#| echo: true
+
+import matplotlib.pyplot as plt
+
+plt.figure()
+plt.scatter(bbr["BA"], bbr["R"])
+plt.xlabel("Batting Average (BA)")
+plt.ylabel("Runs (R)")
+plt.title("Runs vs Batting Average")
+plt.show()
+```
+
+### Fit the Linear Model and Add Line to Scatter Plot
+
+```{python}
+#| label: fit-model-ba
+#| echo: true
+
+import statsmodels.formula.api as smf
+
+g_ba = smf.ols("R ~ BA", data=bbr).fit()
+
+# Display the full regression summary
+g_ba.summary()
+```
+
+### Extract Key Quantities
+
+```{python}
+#| label: extract-metrics-ba
+#| echo: true
+
+import numpy as np
+
+# Regression coefficients (intercept and slope)
+params_ba = g_ba.params
+
+# R-squared
+r2_ba = g_ba.rsquared
+
+# Residual standard error (RSE) = sqrt(estimated residual variance)
+rse_ba = np.sqrt(g_ba.scale)
+
+
+params_ba, r2_ba, rse_ba
+```
+
+### Add the Best-Fit Line to the Plot
+
+```{python}
+#| label: line-on-plot-ba
+#| echo: true
+
+plt.figure()
+plt.scatter(bbr["BA"], bbr["R"])
+
+# x-values for the line
+x = bbr["BA"]
+
+# Predicted runs from the fitted model:
+# y_hat = intercept + slope * x
+intercept = g_ba.params["Intercept"]
+slope = g_ba.params["BA"]
+
+# Predicted values from the fitted regression line
+y_hat = intercept + slope * x
+
+# Draw the fitted line on top of the scatter plot
+plt.plot(x, y_hat)
+
+plt.xlabel("Batting Average (BA)")
+plt.ylabel("Runs (R)")
+plt.title("Runs vs Batting Average with Best-Fit Line")
+plt.show()
+```
+
+### Write Your Interpretation (BA)
+
+Report:
+
+-   The fitted linear regression model predicting runs scored from batting average is $$R =−958.24+6535.80⋅BA$$ This equation says that, according to the model, an increase of 0.001 in batting average is associated with an increase of about 6.54 runs over the season.
+-   The $R^2$ value for this model is: $$R^2=0.677$$This means that approximately 67.7% of the variation in runs scored across teams can be explained by differences in batting average alone. This is a relatively strong linear relationship, indicating that batting average is a meaningful predictor of run production, though a substantial portion of variability remains unexplained.
+-   The RSE value for this model is $$RSE = 47.6 \text{ runs}$$ This tells us that the model’s predictions are typically off by about 48 runs per season. In practical baseball terms, this is a sizable error, suggesting that while batting average explains much of the variation in runs, other factors (such as walks, power hitting, and situational hitting) also play an important role.
+
+------------------------------------------------------------------------
+
+## Your Turn: SLG, OBP, and OPS
+
+For the remaining statistics, **you must complete the analysis yourself**.\
+Template code is provided below. You are responsible for filling in the missing pieces.
+
+### Slugging Percentage (SLG)
+
+```{python}
+#| label: create-slg
+#| echo: true
+
+# TODO: Create slugging percentage (SLG)
+# Hint: Use the definition above.
+bbr["SLG"] = ...
+```
+
+```{python}
+#| label: plot-r-vs-slg
+#| echo: true
+
+# TODO: Scatter plot of Runs vs SLG
+plt.figure()
+plt.scatter(bbr["SLG"], bbr["R"])
 plt.xlabel("Slugging Percentage (SLG)")
-plt.ylabel("Runs Scored (R)")
-plt.title(f"Correlation: Team SLG vs. Total Runs ({YEAR})")
-
-# 5. Add a Best-Fit Line (Simple Linear Regression)
-# We perform the same math: finding the slope (m) and intercept (b).
-m_slg, b_slg = np.polyfit(x_slg, y_runs, 1)
-
-# Generate 100 points for a smooth line from the minimum to maximum SLG value.
-xline_slg = np.linspace(x_slg.min(), x_slg.max(), 100)
-yline_slg = m_slg * xline_slg + b_slg
-
-# Plot the regression line in red.
-plt.plot(xline_slg, yline_slg, color="red", linestyle="--", label="Regression Line")
-
-# 6. Add a Legend and Grid
-plt.legend()
-plt.grid(True, linestyle=':', alpha=0.6)
-
-# 7. Display the final plot
+plt.ylabel("Runs (R)")
+plt.title("Runs vs Slugging Percentage")
 plt.show()
 ```
 
-## Linear Regression
-
-In this section, we move from simple correlation to **Linear Regression**. While correlation tells us how *strongly* two variables are related, regression gives us the actual "formula" for that relationship.
-
-### Why look at the "Fit" information?
-
-When you run `model.summary()`, Python produces a dense table of statistical output. It can be overwhelming at first—it contains information about standard errors, t-statistics, and log-likelihood.
-
-**Not all of this is important to us right now.** Professional analysts often ignore 80% of this table for an initial check. Right now, we are focusing on three specific indicators that tell us if our baseball theory actually holds water:
-
-1. **The Sign and Size of the Slope (the `coef` of OBP or SLG):** This tells us the *direction* and *magnitude* of the relationship. Is the slope positive (more OBP = more Runs)? And how many *actual runs* do we gain for every point of OBP?
-2. **The  (R-Squared):** This is your "Percentage of Story Explained" score. If the  is 0.80, it means 80% of the reason teams score different amounts of runs can be explained by their OBP alone.
-3. **The Visual Fit:** We compare the numbers in these tables back to our plots. If the  is high, the dots on our scatterplot should be hugged very tightly to that red regression line.
-
-### Executing the Regression Models
-
-We use the `statsmodels` library (`sm`) because it provides the comprehensive summary tables required for professional statistical analysis.
-
-#### Model A: Predicting Runs using OBP
-
 ```{python}
-# 1. Add a 'constant' to our independent variable.
-# By default, OLS models assume the line passes through (0,0). 
-# Adding a constant allows for an 'intercept' (where the line hits the Y-axis).
-X_obp = sm.add_constant(data["OBP"])
+#| label: fit-model-slg
+#| echo: true
 
-# 2. Fit the Ordinary Least Squares (OLS) model.
-# We are modeling 'R' (target) based on 'X_obp' (predictor).
-model_obp = sm.OLS(data["R"], X_obp).fit()
+# TODO: Fit the linear model for Runs vs SLG
+g_slg = smf.ols("R ~ SLG", data=bbr).fit()
 
-# 3. Print the full statistical summary.
-model_obp.summary()
-
+# Optional: view summary
+g_slg.summary()
 ```
 
-#### Model B: Predicting Runs using SLG
-
 ```{python}
-# 1. Repeat the process for Slugging Percentage.
-X_slg = sm.add_constant(data["SLG"])
+#| label: metrics-slg
+#| echo: true
 
-# 2. Fit the model.
-model_slg = sm.OLS(data["R"], X_slg).fit()
+# TODO: Compute and report:
+# - regression coefficients
+# - R-squared
+# - residual standard error (RSE)
+# - sum of squared residuals (SSR)
+#
+# Then write your interpretation in markdown below these outputs.
 
-# 3. Print the summary.
-model_slg.summary()
+# params_slg = ...
+# r2_slg = ...
+# rse_slg = ...
+# ssr_slg = ...
 
+# params_slg, r2_slg, rse_slg, ssr_slg
 ```
 
----
+```{python}
+#| label: line-on-plot-slg
+#| echo: true
 
-### How to read these results
+# TODO: Add the best-fit line to the scatter plot (Runs vs SLG)
+# Hint: use g_slg.params[0] and g_slg.params[1]
 
-When you look at the tables above, find these specific values:
+# plt.figure()
+# plt.scatter(bbr["SLG"], bbr["R"])
+# x = bbr["SLG"]
+# y_hat = ...
+# plt.plot(x, y_hat)
+# plt.xlabel("Slugging Percentage (SLG)")
+# plt.ylabel("Runs (R)")
+# plt.title("Runs vs SLG with Best-Fit Line")
+# plt.show()
+```
 
-* **R-squared:** Found in the top-right of the summary. Compare this value between Model A and Model B. The higher the number, the better that stat "explains" run scoring.
-* **coef (Coefficient):** Found in the middle table.
-  * The `const` coef is your **intercept**.
-  * The `OBP` or `SLG` coef is your **slope**. This is the "rate of return" for that stat.
+------------------------------------------------------------------------
 
-### More about $R^2$
+### On-Base Percentage (OBP)
 
-In many sports analytics contexts, $R^2$ (pronounced "R-squared") is the most important number in your output because it directly measures the predictive power of a statistic. It is formally known as the Coefficient of Determination.Think of $R^2$ as a scale from 0 to 1 (or 0% to 100%) that answers the question: “How much of the 'Run Scoring Story' is actually explained by this specific stat?”
+```{python}
+#| label: create-obp
+#| echo: true
 
-1. The "Story" of Variance
+# TODO: Create on-base percentage (OBP)
+bbr["OBP"] = ...
+```
 
-In any MLB season, teams score different amounts of runs. Some score 800, others score 600. This difference is called variance.If your model has an $R^2$ of 0.85, it means that 85% of the reason teams scored different amounts of runs can be explained by their OBP or SLG.The remaining 15% is "unexplained"—it’s the result of luck, base running, coaching, or other stats not in your model.
+```{python}
+#| label: plot-r-vs-obp
+#| echo: true
 
-2. The Visual Connection
+# TODO: Scatter plot of Runs vs OBP
+# (Write your code here)
+```
 
-There is a direct link between the $R^2$ value and the plots you created earlier:
+```{python}
+#| label: fit-model-obp
+#| echo: true
 
-- High $R^2$: The data points are tightly packed around the red regression line. The line is a very "good fit" for the data.
-- Low $R^2$: The data points are scattered widely. The line is just a "vague suggestion" of the trend.
+# TODO: Fit the linear model for Runs vs OBP
+# g_obp = ...
+```
 
-3. Comparing OBP vs. SLG: 
+```{python}
+#| label: metrics-obp
+#| echo: true
 
-This is the "smoking gun." If Model A (OBP) has an $R^2$ of .75 and Model B (SLG) has an $R^2$ of .82, the conclusion is clear: In that specific year, SLG was more reliable for predicting how many runs a team would score.
+# TODO: Compute and report params, R-squared, RSE, SSR for OBP
+# params_obp = ...
+# r2_obp = ...
+# rse_obp = ...
+# ssr_obp = ...
 
+# params_obp, r2_obp, rse_obp, ssr_obp
+```
 
+```{python}
+#| label: line-on-plot-obp
+#| echo: true
 
+# TODO: Add the best-fit line to the scatter plot (Runs vs OBP)
+# (Write your code here)
+```
 
+------------------------------------------------------------------------
 
+### OPS (On-Base Plus Slugging)
+
+```{python}
+#| label: create-ops
+#| echo: true
+
+# TODO: Create OPS
+# Hint: OPS = OBP + SLG
+bbr["OPS"] = ...
+```
+
+```{python}
+#| label: plot-r-vs-ops
+#| echo: true
+
+# TODO: Scatter plot of Runs vs OPS
+# (Write your code here)
+```
+
+```{python}
+#| label: fit-model-ops
+#| echo: true
+
+# TODO: Fit the linear model for Runs vs OPS
+# g_ops = ...
+```
+
+```{python}
+#| label: metrics-ops
+#| echo: true
+
+# TODO: Compute and report params, R-squared, RSE, SSR for OPS
+# params_ops = ...
+# r2_ops = ...
+# rse_ops = ...
+# ssr_ops = ...
+
+# params_ops, r2_ops, rse_ops, ssr_ops
+```
+
+```{python}
+#| label: line-on-plot-ops
+#| echo: true
+
+# TODO: Add the best-fit line to the scatter plot (Runs vs OPS)
+# (Write your code here)
+```
+
+------------------------------------------------------------------------
+
+## When You’re Done
+
+Answer the following question **in complete sentences**:
+
+Which of BA, SLG, OBP, or OPS gives the **highest** $R^2$ when predicting runs?\
+What does that suggest about what matters most for scoring runs?
+
+------------------------------------------------------------------------
+
+## Submission
+
+Now submit your assignment by commiting your work to your local git repository and pushing the changes to your classroom Github repo. To do so in Positron
+1. Click the "Source Control" icon on the left.
+2. Type a message summarizing your work and push the commit button.
+3. Click the Push icon.
+4. Lastly, check on github classroom that you have committed your work!
