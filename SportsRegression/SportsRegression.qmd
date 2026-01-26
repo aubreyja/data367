@@ -1,0 +1,337 @@
+---
+title: "Regression in Sports"
+author: "Dr. Ekstrom"
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+## Purpose
+
+To learn more about regression, getting and loading data, and using regression to identify key statistics in a variety of sports.
+
+- **Sports Analytics:** Try to explain how points (or goals) are scored in various sports. That is, to try to create a statistic that explains as much run scoring as possible.
+- **Statistics:** Discuss the assumptions in using regression for prediction, and a bit of multiple regression.
+- **Python:** Downloading suitable data from the web, loading data into Python, and using multiple regression to create new statistics.
+
+---
+
+## Model from Previous Activity
+
+If you worked through the previous Baseball Runs activity, you saw that the model
+
+$$R = -877.49 + 2175.73 \cdot OPS$$
+
+had the highest \(R^2\) and lowest residual standard error.
+
+```{python}
+#| label: load-and-fit-ops
+#| echo: true
+
+import pandas as pd
+import numpy as np
+import statsmodels.formula.api as smf
+
+# Load the baseball data
+bbr = pd.read_csv("data/BaseballRuns.csv")
+
+# Compute slugging percentage (SLG).
+#
+# SLG measures a team's power by weighting hits by the number of bases gained.
+# Singles count as 1 base, doubles as 2, triples as 3, and home runs as 4.
+# We divide by at-bats (AB) to put this on a per–at-bat scale.
+bbr["SLG"] = (
+    bbr["1B"]
+    + 2 * bbr["2B"]
+    + 3 * bbr["3B"]
+    + 4 * bbr["HR"]
+) / bbr["AB"]
+
+# Compute on-base percentage (OBP).
+#
+# OBP measures how often a team avoids making an out.
+# It counts hits, walks (BB), and hit-by-pitches (HBP) in the numerator,
+# and all plate appearances that could result in reaching base in the denominator.
+bbr["OBP"] = (
+    bbr["1B"]
+    + bbr["2B"]
+    + bbr["3B"]
+    + bbr["HR"]
+    + bbr["BB"]
+    + bbr["HBP"]
+) / (
+    bbr["AB"]
+    + bbr["BB"]
+    + bbr["HBP"]
+    + bbr["SF"]
+)
+
+# Compute OPS (On-base Plus Slugging).
+#
+# OPS is a simple but very popular statistic that combines
+# a team's ability to get on base (OBP) and to hit for power (SLG).
+bbr["OPS"] = bbr["OBP"] + bbr["SLG"]
+
+# Fit the linear regression model: Runs predicted by OPS
+gos = smf.ols("R ~ OPS", data=bbr).fit()
+
+# Display the model summary (Python analogue of R's summary(lm(...)))
+gos.summary()
+```
+
+## Using Linear Regression for Prediction
+
+We are using a linear regression model to **predict** runs scored (`R`) from a batting statistic (such as `OPS`).  
+Before trusting a model for prediction, we should check whether the model is a reasonable approximation and whether it is likely to produce **stable, reliable predictions**.
+
+Rather than memorizing a checklist, we focus on a few practical questions:
+
+- Does a straight-line model make sense for these data?
+- Are prediction errors roughly similar across the range of the predictor?
+- Are there any unusual points that strongly affect the fitted line?
+
+---
+
+## Histograms
+
+Histograms help us understand the *range and typical values* of the variables.  They are **not** a strict requirement for regression, but they help build intuition.
+
+### Histogram of OPS
+
+```{python}
+#| label: hist-ops
+#| echo: true
+
+import matplotlib.pyplot as plt
+
+plt.figure()
+plt.hist(bbr["OPS"])
+plt.xlabel("OPS")
+plt.ylabel("Count")
+plt.title("Histogram of OPS")
+plt.show()
+```
+
+### Histogram of Runs
+
+```{python}
+#| label: hist-runs
+#| echo: true
+
+plt.figure()
+plt.hist(bbr["R"])
+plt.xlabel("Runs (R)")
+plt.ylabel("Count")
+plt.title("Histogram of Runs")
+plt.show()
+```
+
+---
+
+## Scatter Plot: Runs vs OPS
+
+A scatter plot is the most important first check.  We are looking to see whether the relationship between `OPS` and `Runs` looks **roughly linear**.
+
+```{python}
+#| label: scatter-r-vs-ops
+#| echo: true
+
+plt.figure()
+plt.scatter(bbr["OPS"], bbr["R"])
+plt.xlabel("On-base Plus Slugging (OPS)")
+plt.ylabel("Runs (R)")
+plt.title("Runs vs OPS")
+plt.show()
+```
+
+---
+
+## Residual Diagnostics
+
+After fitting a regression model (for example, `gos = smf.ols("R ~ OPS", data=bbr).fit()`), we examine residuals.
+
+Residuals measure **prediction error**:
+
+$$\text{residual} = \text{observed runs} - \text{predicted runs}.$$
+
+If the model is reasonable, residuals should look like random noise rather than showing clear patterns.
+
+---
+
+## QQ Plot of Residuals
+
+A QQ plot compares the sorted residuals from the model to the corresponding quantiles of a normal distribution. If the residuals behave like normal noise, the points will lie close to a straight line. Systematic deviations from the line indicate skewness, heavy tails, or outliers.
+
+```{python}
+#| label: qqplot-residuals
+#| echo: true
+
+import statsmodels.api as sm
+
+
+# After fitting a regression model, we examine the residuals to understand
+# how the model's predictions differ from the observed values.
+#
+# The fitted model object (gos) contains diagnostic information.
+# Calling get_influence() gives access to quantities related to
+# leverage, influence, and scaled residuals.
+influence = gos.get_influence()
+
+# Extract *internally studentized residuals*.
+#
+# These residuals:
+# - start with the raw residuals (observed - predicted),
+# - are scaled by an estimate of their standard deviation,
+# - and are adjusted for leverage.
+#
+# This scaling allows residuals from different observations
+# to be compared on the same scale.
+# They are analogous to R's rstandard(model).
+res = influence.resid_studentized_internal
+
+# Create a QQ (quantile–quantile) plot of the studentized residuals.
+#
+# A QQ plot compares the distribution of the residuals to a theoretical
+# normal distribution.
+#
+# For prediction, we use this plot as a *sanity check*:
+# - If the points lie roughly along the 45-degree line, the residuals
+#   are reasonably well-behaved.
+# - Large departures in the tails can indicate extreme observations
+#   that may dominate the fitted model.
+sm.qqplot(res, line="45")
+
+# Add a descriptive title so the purpose of the plot is clear.
+plt.title("QQ Plot of Internally Studentized Residuals")
+
+# Display the plot.
+plt.show()
+```
+
+---
+
+## Residuals vs OPS
+
+This plot helps check two things at once:
+
+- Are residuals centered around 0 (no systematic bias)?
+- Is the vertical spread of residuals roughly the same across OPS values?
+
+```{python}
+#| label: residual-plot
+#| echo: true
+
+plt.figure()
+plt.scatter(bbr["OPS"], res)
+plt.ylim(-3, 3)
+plt.xlabel("On-base Plus Slugging (OPS)")
+plt.ylabel("Internally Studentized Residuals")
+plt.title("Residuals vs OPS")
+plt.axhline(0)
+plt.show()
+```
+
+---
+
+## Creating a New Statistic: OOPS
+
+We can sometimes improve prediction by combining existing statistics.
+
+\[
+\mathrm{OOPS} = 2 \cdot \mathrm{OBP} + \mathrm{SLG}.
+\]
+
+```{python}
+#| label: oops-model
+#| echo: true
+
+bbr["OOPS"] = 2*bbr["OBP"] + bbr["SLG"]
+
+goos = smf.ols("R ~ OOPS", data=bbr).fit()
+goos.summary()
+```
+
+---
+
+## Multiple Regression: OBP and SLG
+
+Instead of choosing weights ourselves, we can let regression estimate them:
+
+```{python}
+#| label: multiple-reg-obp-slg
+#| echo: true
+
+gm = smf.ols("R ~ OBP + SLG", data=bbr).fit()
+gm.summary()
+```
+
+---
+
+## Adding Another Predictor: Stolen Bases (SB)
+
+```{python}
+#| label: multiple-reg-obp-slg-sb
+#| echo: true
+
+gmb = smf.ols("R ~ OBP + SLG + SB", data=bbr).fit()
+gmb.summary()
+```
+
+---
+
+## Computing the Residual Standard Error (RSE)
+
+The **Residual Standard Error (RSE)** measures the *typical size of a prediction error*, in runs.
+
+In Python (using `statsmodels`), the residual variance is stored in `model.scale`.  
+The RSE is the square root of this value.
+
+### Example
+
+```{python}
+#| label: compute-rse
+#| echo: true
+
+import numpy as np
+
+# Residual Standard Error for the OPS model
+rse_ops = np.sqrt(gos.scale)
+rse_ops
+```
+
+---
+
+## Questions (Answer in Complete Sentences)
+
+1. **Linearity:**  
+   Looking at the scatter plot of Runs vs OPS, does a straight-line model seem reasonable?  
+   Briefly explain what you see.
+
+2. **Model comparison:**  
+   Compare the OPS, OOPS, and OBP+SLG models.
+   - Which model has the *largest* \(R^2\)?
+   - Which model has the *smallest* residual standard error?
+
+3. **Interpreting RSE:**  
+   Using the RSE you computed, explain in plain language what this number means for predicting runs.
+
+4. **Residual plots:**  
+   Looking at the residuals vs OPS plot, do you see any clear patterns (curves or funnel shapes)?  
+   What would such patterns suggest about the model?
+
+5. **Prediction thinking:**  
+   If your goal were to predict runs for a new team-season, which model would you choose and why?
+
+## Class Activity
+
+Our goal is to perform an analysis similar to the one we performed in Baseball runs part 1 on
+another sport. Can we identify a statistic that is the best predictor of scoring? (or best explains
+scoring? or winning percentage? or wins?)
+• Choose a sport among: College Basketball, NBA, College Football, NFL, NHL, or Soccer.
+• Find data for your sport. A great reference is:
+https://www.sports-reference.com/
+• Download the appropriate data. (CSVs work well.)
+• Load the data into Python using Pandas.
+• Perform your analysis on the data.
+When your group is finished, push a copy of the groups QMD file and data to github classroom.
