@@ -1,19 +1,56 @@
 ---
 title: "Regression in Sports"
-author: "Dr. Ekstrom"
+author: 
 format:
   html: default
   pdf: default
 fontsize: 11pt
 ---
 
-## Purpose
+## Overview
 
 To learn more about regression, getting and loading data, and using regression to identify key statistics in a variety of sports.
 
 - **Sports Analytics:** Try to explain how points (or goals) are scored in various sports. That is, to try to create a statistic that explains as much run scoring as possible.
 - **Statistics:** Discuss the assumptions in using regression for prediction, and a bit of multiple regression.
 - **Python:** Downloading suitable data from the web, loading data into Python, and using multiple regression to create new statistics.
+
+------------------------------------------------------------------------
+
+## Academic integrity and collaboration
+
+You may discuss *ideas* and *debugging strategies* with classmates, but your code, figures, and written analysis must be your own work unless your instructor explicitly authorizes collaboration. If you use an external source (AI, documentation, blog post, etc.), cite it in a short note.
+
+## Use of Generative AI
+
+Generative AI tools are increasingly used in contemporary professional data-science practice, and their thoughtful use is permitted for this assignment. However, you are a student developing professional skills, not yet a practicing professional. You are therefore fully responsible for the correctness, clarity, and quality of all work you submit, including verifying any AI-generated suggestions and making independent decisions about methods, code, and interpretation.
+
+AI tools may assist with brainstorming, explanation, or coding support, but you should consider whether your use of AI is helping you build the skills required of a successful data-science professional, or merely reproducing output you do not fully understand.
+
+Any use of generative AI must be explicitly acknowledged. Failure to disclose AI use may be considered a violation of the Code of Academic Integrity. If you are unsure whether a particular use of AI is appropriate for this assignment, please ask before submitting.
+
+## AI Acknowledgment Statement
+
+I acknowledge the use of \[AI system name(s)\] to \[describe how the tool was used\]. Prompts used included \[link or pasted prompt(s)\].
+
+------------------------------------------------------------------------
+
+## GitHub Classroom workflow
+
+### Accept the assignment and clone your repository
+
+**Accept the assignment** using the GitHub Classroom link provided on the course site. After acceptance, you will have your own private repository on [GitHub](https://github.com "Github").
+
+Now clone the assignment to your computer. To do this in Positron, first open positron. You can either click **New** in the upper left hand corner, and then choose **New Folder From Git...**, or you can choose **New Folder From Git** in the center of the screen:
+
+![](images/new-from-homescreen.png){fig-align="center" width="423"}
+
+Next you will see this dialogue box:
+
+![](images/new-folder-from-git.png){fig-align="center" width="364"}
+
+In the box below "Git repository URL" paste your GitHub Classroom repository URL. In the box below "Create folder as a subfolder of" decide where on your computer you would like to keep the code for this class, type in that directory, and click OK.
+
 
 ---
 

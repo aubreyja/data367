@@ -27,7 +27,12 @@ Before modern version control systems were widely adopted, collaboration was oft
 -   storing files on a shared drive,
 -   or saving multiple copies of the same file with different names (for example, `report_final_v2_reallyfinal.docx`).
 
-These approaches do not scale well. They make it difficult to answer basic questions such as: - Who made this change? - When was it made? - Which version is the most recent? - How do we combine changes made by different people?
+These approaches do not scale well. They make it difficult to answer basic questions such as:
+
+-   Who made this change?
+-   When was it made?
+-   Which version is the most recent?
+-   How do we combine changes made by different people?
 
 Even tools such as Google Docs, which improve collaboration for single documents, have important limitations. They are designed primarily for real-time editing of text, not for structured projects that involve many related files, such as data, code, figures, and written reports. They also provide limited support for careful review of changes, offline work, and long-term project organization.
 
@@ -37,7 +42,7 @@ As projects grow larger or involve more contributors, these limitations quickly 
 
 Git was designed specifically to support both **change tracking** and **collaboration**.
 
-With Git:
+With git:
 
 -   Each contributor works on their own local copy of a project.
 
@@ -47,11 +52,26 @@ With Git:
 
 -   Changes from multiple contributors can be combined in a controlled and transparent way.
 
-Because every contributor has access to the full project history, Git allows people to work independently without overwriting one another’s work. This makes collaboration safer, clearer, and more reliable.
+Because every contributor has access to the full project history, git allows people to work independently without overwriting one another’s work. This makes collaboration safer, clearer, and more reliable.
 
-For these reasons, Git has become the standard version control system in data science, computing, and many other technical fields where collaboration, reproducibility, and careful change tracking are essential.
+For these reasons, git has become the standard version control system in data science, computing, and many other technical fields where collaboration, reproducibility, and careful change tracking are essential.
 
 In this course, version control is used not only to protect your work, but also to introduce you to collaborative workflows that are standard in professional environments.
+
+# Git and GitHub: how they work together
+
+In this course, you will use **git** and **GitHub** together. Although their names are similar, they serve different roles, and understanding how they fit together is important.
+
+**Git** is a program that runs on your computer. Its job is to track changes to files over time. When you make a commit, git records what changed and when it changed, and it allows you to return to earlier versions if needed. Git works entirely on your local machine and does not require an internet connection to track changes.
+
+[**GitHub**](https://github.com) is a website that works with git. It stores a copy of your git repository online and allows that repository to be shared with others. In this course, GitHub is used to distribute assignments, collect submissions, and allow instructors and teaching assistants to view and provide feedback on your work through GitHub Classroom. More broadly, GitHub is widely used for collaboration and as a professional portfolio.
+
+A helpful way to think about the relationship is the following:
+
+-   **Git** is the tool that tracks and saves your work on your computer.
+-   **GitHub** is the online service that stores a copy of that work and makes it possible to share it.
+
+You can use git without GitHub, but you cannot use GitHub effectively without git. In practice, they are almost always used together.
 
 # GitHub and employment
 
@@ -71,54 +91,17 @@ During this course, most of your GitHub repositories will be private and used fo
 
 ------------------------------------------------------------------------
 
-# Git and GitHub: how they work together
-
-In this course, you will use **Git** and **GitHub** together. Although their names are similar, they serve different roles, and understanding how they fit together is important.
-
-**Git** is a program that runs on your computer. Its job is to track changes to files over time. When you make a commit, Git records what changed and when it changed, and it allows you to return to earlier versions if needed. Git works entirely on your local machine and does not require an internet connection to track changes.
-
-**GitHub** is a website that works with Git. It stores a copy of your Git repository online and allows that repository to be shared with others. In this course, GitHub is used to distribute assignments, collect submissions, and allow instructors and teaching assistants to view and provide feedback on your work through GitHub Classroom. More broadly, GitHub is widely used for collaboration and as a professional portfolio.
-
-A helpful way to think about the relationship is the following:
-
--   **Git** is the tool that tracks and saves your work on your computer.
--   **GitHub** is the online service that stores a copy of that work and makes it possible to share it.
-
-You can use Git without GitHub, but you cannot use GitHub effectively without Git. In practice, they are almost always used together.
-
-If Git is installed, you will see a version number. If you see an error instead, Git needs to be installed.
-
-General installation guidance by operating system:
-
--   **macOS**
-
-    Git can be installed by installing the Xcode Command Line Tools or via Homebrew
-
--   **Windows**
-
-    Install *Git for Windows*, which includes both Git and a terminal environment.
-
--   **Linux**
-
-    Install Git using your system’s package manager.
-
-Links to detailed installation instructions are provided in the references section.
-
 # GitHub Classroom
 
-GitHub Classroom is a tool built on top of GitHub that is designed specifically for teaching and learning. It allows instructors to distribute assignments, collect student work, and provide feedback using the same tools and workflows that are used in professional technical environments.
+[GitHub Classroom](https://classroom.github.com) is a tool built on top of GitHub that is designed specifically for teaching and learning. It allows instructors to distribute assignments, collect student work, and provide feedback using the same tools and workflows that are used in professional technical environments.
 
-From a student perspective, GitHub Classroom simplifies how assignments work. When you accept an assignment link, GitHub Classroom automatically creates a **private GitHub repository** for you that contains the starter files and instructions. This repository belongs to you, and only you and the course staff can see it. There is no separate submission system to learn: your work is submitted by committing changes and pushing them to GitHub.
+When you accept an assignment link, GitHub Classroom automatically creates a **private GitHub repository** for you that contains the starter files and instructions. This repository belongs to you, and only you and the course staff can see it. There is no separate submission system to learn: your work is submitted by committing changes and pushing them to GitHub.
 
-## What GitHub Classroom *is* (and what it is not)
+It is helpful to be clear about what GitHub Classroom does and does not do. Github Classroom is
 
-It is helpful to be clear about what GitHub Classroom does and does not do.
+-   a way to distribute assignments via git,
 
-GitHub Classroom **is**:
-
--   a way to distribute assignments,
-
--   a system for collecting work,
+-   a system for collecting individual and group work via git,
 
 -   and a platform for viewing progress and providing feedback.
 
@@ -126,11 +109,11 @@ GitHub Classroom **is not**:
 
 -   a place where you upload finished files at the last minute,
 
--   a replacement for Git itself, -
+-   a replacement for git itself, -
 
 -   or a tool that automatically grades your work just because you pushed it.
 
-Instead, GitHub Classroom works by giving you a structured GitHub repository and expecting you to use Git in a disciplined way throughout the assignment.
+GitHub Classroom works by giving you a structured GitHub repository and expects you to use git in a disciplined way throughout the assignment.
 
 ## Submission, deadlines, and grading
 
@@ -180,73 +163,32 @@ Third, GitHub provides the shared online space where this work lives. In this co
 
 For these reasons, Git and GitHub are not just submission tools in this course. They are central to how we manage work, collaborate, and practice the workflows used in modern data science.
 
-------------------------------------------------------------------------
+# Git Basics
 
-# Assignment workflow in this course
+Below we walk you through some basics of working with git. Here is a nice introductory video about git.
 
-Most assignments in this course will follow the same general workflow using **GitHub Classroom** and standard data science tools.
+{{< video https://www.youtube.com/embed/r8jQ9hVA2qs?si=dTlZLpX4ka8hsupH >}}
 
-## 1. Assignments are created in GitHub Classroom
+## Installing Git
 
-Assignments are created by the instructors in GitHub Classroom. Each assignment typically includes:
+You may already have git installed on your computer. You can check by opening a terminal window and typing `git --version`. If git is intalled, it will tell you the version number. For example,
 
--   a description of the task, \*
+![](images/git-version.png)
 
--   starter files or starter code,
+If you do not have git installed, it will tell you something like "command not found." In that case, you need to install it.
 
--   and written instructions (usually in a `README.md` file).
+Instructions for installing git can be found [here](https://git-scm.com/install/ "Instructions for installing git").
 
-Assignments may be individual or group-based.
+After you have installed git, there are two configuration commands you must run. Open a terminal and run each of the following commands in turn. Be sure to change the values of `user.name` and `user.email` to your own name and email address.
 
-## 2. You accept the assignment
+```         
+git config --global user.name "Your Name"
+git config --global usser.email "email@address"
+```
 
-When you click the assignment link:
+## Basic Git Concepts
 
--   GitHub Classroom creates a **private GitHub repository** for you (or for your group),
-
--   the starter files are copied into that repository,
-
--   and the repository becomes the central place where your work lives.
-
-Only you (and your group members, if applicable) and the course staff can see this repository.
-
-## 3. You clone the repository and begin working
-
-You clone the repository to your computer and do your work locally. Depending on the assignment, this may involve tools such as:
-
--   **Python** for data analysis,
-
--   **Quarto** for reports and reproducible documents,
-
--   **Positron** as your development environment,
-
--   and possibly **R** or other tools used in data science workflows.
-
-As you work, you make commits to save progress and document changes.
-
-## 4. You collaborate when appropriate
-
-For group assignments, all group members work within the same repository. Git allows each person to contribute without overwriting others’ work, and it records who made each change and when. This supports clear coordination and mirrors professional collaborative practice.
-
-## 5. You push your work to GitHub
-
-To submit your work, you push your commits to GitHub. There is **no separate submission step** outside of GitHub.
-
-The version of the repository that exists on GitHub at the assignment deadline is what will be graded.
-
-## 6. Feedback and grading
-
-Instructors and teaching assistants view your repository directly when grading. Feedback may be provided through comments, issues, pull requests, or the course LMS. Your commit history, file organization, and documentation form part of the record of your work.
-
-------------------------------------------------------------------------
-
-By following this workflow consistently, you will not only complete assignments efficiently, but also gain experience with tools and practices that are standard in professional data science and computing environments.
-
-------------------------------------------------------------------------
-
-# Basic Git Concepts
-
-## Repositories (repos)
+### Repositories (repos)
 
 A **repository** (often called a *repo*) is a folder that Git is tracking. In addition to your files, a repository contains the information Git uses to record changes over time, including the full history of commits. Once a folder is a Git repository, Git can track changes to the files inside it and help manage collaboration.
 
@@ -406,19 +348,19 @@ In general:
 
 Examples of good commit messages:
 
--    `Clean and filter raw dataset`
+-   `Clean and filter raw dataset`
 
--    `Add summary statistics table`
+-   `Add summary statistics table`
 
--    `Draft introduction section`
+-   `Draft introduction section`
 
 Examples of poor commit messages:
 
--    `stuff`
+-   `stuff`
 
--    `changes`
+-   `changes`
 
--    `worked on homework`
+-   `worked on homework`
 
 Commit history is not graded for perfection. It is used to understand how your work developed and to support collaboration and feedback.
 
@@ -426,13 +368,75 @@ Commit history is not graded for perfection. It is used to understand how your w
 
 Each assignment repository should be kept reasonably organized. This typically means:
 
--    following the folder structure provided in the starter files,
+-   following the folder structure provided in the starter files,
 
--    keeping related files together,
+-   keeping related files together,
 
 -   and avoiding unnecessary or unused files.
 
 Clear organization makes your work easier to understand, both for grading and for your future reference.
+
+------------------------------------------------------------------------
+
+# Assignment workflow in this course
+
+Most assignments in this course will follow the same general workflow using **GitHub Classroom** and standard data science tools.
+
+## 1. Assignments are created in GitHub Classroom
+
+Assignments are created by the instructors in GitHub Classroom. Each assignment typically includes:
+
+-   a description of the task, \*
+
+-   starter files or starter code,
+
+-   and written instructions (usually in a `README.md` file).
+
+Assignments may be individual or group-based.
+
+## 2. You accept the assignment
+
+When you click the assignment link:
+
+-   GitHub Classroom creates a **private GitHub repository** for you (or for your group),
+
+-   the starter files are copied into that repository,
+
+-   and the repository becomes the central place where your work lives.
+
+Only you (and your group members, if applicable) and the course staff can see this repository.
+
+## 3. You clone the repository and begin working
+
+You clone the repository to your computer and do your work locally. Depending on the assignment, this may involve tools such as:
+
+-   **Python** for data analysis,
+
+-   **Quarto** for reports and reproducible documents,
+
+-   **Positron** as your development environment,
+
+-   and possibly **R** or other tools used in data science workflows.
+
+As you work, you make commits to save progress and document changes.
+
+## 4. You collaborate when appropriate
+
+For group assignments, all group members work within the same repository. Git allows each person to contribute without overwriting others’ work, and it records who made each change and when. This supports clear coordination and mirrors professional collaborative practice.
+
+## 5. You push your work to GitHub
+
+To submit your work, you push your commits to GitHub. There is **no separate submission step** outside of GitHub.
+
+The version of the repository that exists on GitHub at the assignment deadline is what will be graded.
+
+## 6. Feedback and grading
+
+Instructors and teaching assistants view your repository directly when grading. Feedback may be provided through comments, issues, pull requests, or the course LMS. Your commit history, file organization, and documentation form part of the record of your work.
+
+------------------------------------------------------------------------
+
+By following this workflow consistently, you will not only complete assignments efficiently, but also gain experience with tools and practices that are standard in professional data science and computing environments.
 
 ------------------------------------------------------------------------
 
