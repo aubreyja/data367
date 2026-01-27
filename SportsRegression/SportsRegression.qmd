@@ -238,9 +238,9 @@ plt.show()
 
 We can sometimes improve prediction by combining existing statistics.
 
-\[
+$$
 \mathrm{OOPS} = 2 \cdot \mathrm{OBP} + \mathrm{SLG}.
-\]
+$$
 
 ```{python}
 #| label: oops-model
@@ -327,11 +327,12 @@ rse_ops
 
 Our goal is to perform an analysis similar to the one we performed in Baseball runs part 1 on
 another sport. Can we identify a statistic that is the best predictor of scoring? (or best explains
-scoring? or winning percentage? or wins?)
-• Choose a sport among: College Basketball, NBA, College Football, NFL, NHL, or Soccer.
+scoring? or winning percentage? or wins?)  
+
+• Choose a sport among: College Basketball, NBA, College Football, NFL, NHL, or Soccer.  
 • Find data for your sport. A great reference is:
-https://www.sports-reference.com/
-• Download the appropriate data. (CSVs work well.)
-• Load the data into Python using Pandas.
-• Perform your analysis on the data.
+[https://www.sports-reference.com/](https://www.sports-reference.com/)  
+• Download the appropriate data. (CSVs work well.)  
+• Load the data into Python using Pandas.  
+• Perform your analysis on the data.  
 When your group is finished, push a copy of the groups QMD file and data to github classroom.
