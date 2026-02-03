@@ -52,6 +52,7 @@ _freeze/
 _site/
 _book/
 _pub/
+_files/
 .local/
 *.html
 
