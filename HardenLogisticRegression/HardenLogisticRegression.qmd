@@ -1,0 +1,22 @@
+---
+title: "Logistic Regression with James Harden"
+author: Notes adapted from Jason Spector, Jericho Lawson, and Aaron Ekstrom
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+## Overview
+Having a game-changing player in the NBA can affect how successful his team is throughout the season. James Harden is no exception. While he was with the Rockets, he has made a name for himself through lots and lots of scoring (even if plenty of those points came from the free throw line). With that said, how well does James Harden need to do to ensure that the Rockets get a win? We will use logistic regression to answer this question. 
+
+![](https://thespun.com/.image/ar_1:1,c_fill,cs_srgb,fl_progressive,q_auto:good,w_1200/MTgzMTI4NTIwODI1Nzc1NDU2/brooklyn-nets-v-houston-rockets.jpg){width=250}
+
+## Linear Regression Review
+```{python}
+import pandas as pd
+```
+
+## Logistic Regression
+
+
