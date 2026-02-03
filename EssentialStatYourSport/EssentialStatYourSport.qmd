@@ -1,0 +1,27 @@
+---
+title: "Essential Stat in Your Sport"
+subtitle: "Daily Activity for Monday Feb 2"
+author: "YOUR NAME"
+date: ""
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: false
+    code-fold: false
+execute:
+  echo: true
+  warning: true
+  message: true
+  error: true
+---
+
+## Essential Stat in Your Sport, Part 1
+
+Find a statistic that best explains scoring (or winning percentage) in the sport of your choosing. If you choose baseball, you must choose a statistic different from any of the stats we worked with previously. For this assignment aim to give:
+
+- details on the statistic
+- the model that you get from using regression, including the R-squared and standard error values
+- a scatterplot of the data with the regression line included
+
+Write up your solution in this qmd file and your data files to this Github classroom repository. You must write this up in Python, use `pandas` to import the data into a dataframe, and use `statsmodels` to run the regression. 

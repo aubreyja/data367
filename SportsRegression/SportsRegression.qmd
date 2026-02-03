@@ -1,6 +1,6 @@
 ---
 title: "Regression in Sports"
-author: 
+author: YOUR NAME
 format:
   html: default
   pdf: default
