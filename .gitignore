@@ -53,6 +53,7 @@ _site/
 _book/
 _pub/
 .local/
+*.html
 
 #Python/Jupyter
 # Byte-compiled / optimized / DLL files
