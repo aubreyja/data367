@@ -58,6 +58,19 @@ harden.head()
 **Plotting Results**. Now that we've narrowed the scope of our problem to identifying the relationship between scoring and winning games, we're going to start by plotting the data. 
 
 How valuable is James Harden to the Houston Rockets? As the figure shows below, the more points Harden scores, the more likely the Rockets are of winning games. However, aside from this surface-level observation, it's not clear just how much impact he has on the team.
+
+```{python}
+# Plot Points Scored by Harden vs. Wins
+plt.figure()
+plt.scatter(harden["PTS"], harden["Dummy"], alpha=0.2)
+  # The alpha parameter sets the opacity of the points, making the density
+  # of the points easier to see.
+plt.xlabel("Points Scored")
+plt.ylabel("Win (Win = 1, Loss = 0)")
+plt.title("Rockets Wins based on Points Scored by James Harden")
+plt.show()
+```
+
 ## Logistic Regression
 
 
