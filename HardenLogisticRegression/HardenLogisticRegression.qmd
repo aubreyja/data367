@@ -152,3 +152,28 @@ pd.DataFrame(
 It looks like our model has a tendency to predict wins and is poor at predicting losses. Specifically, our model is able to predict ~96% of winning games, but only 12% of losing games. This results in a high false positive rate. 
 
 ---
+
+### Interpreting Logistic Regression
+
+As with linear regression, we can use the `summary()` function to get a closer look at the model. 
+
+```{python}
+# Main results
+log_fit.summary()
+```
+
+**p-value**. The regression coefficient of `PTS` has a very small p-value ($< 0.001$), so we have strong reason to believe the number of points Harden scores is associated with Rockets' chances of winning a game. 
+
+**Regression coefficient.** The regression coefficient of `PTS` is 0.0452. This means that for every extra point Harden scores, the log-odds ($\log\left(\frac{p}{1-p}\right)$) increases by 0.0452. 
+
+Because log-odds are difficult to interpret, we often phrase effects in terms of odds. To get rid of the log in the log-odds, we just exponentiate the coefficients: if $\log\left(\frac{p}{1-p}\right)$ increases by $\beta$ for every unit increase in $x$, then it follows that $\frac{p}{1-p}$ is _multiplied_ by $e^{\beta}$ for every unit increase in $x$.
+
+We can calculate this using the exponentiation function from `numpy`:
+
+```{python}
+# Odds Ratio: Exponentiated Coefficients
+np.exp(log_fit.params)
+```
+
+**Interpreting odds.** Now, we can interpret this in a more natural way. For every extra point that Harden scores, the odds ($p / (1-p)$) of the Rockets winning is _multiplied_ by 1.046. In other words, the odds of winning increase by 4.6%. 
+
