@@ -72,5 +72,46 @@ plt.show()
 ```
 
 ## Logistic Regression
+As we've discussed previously, linear regression is a powerful method that is useful in parsing out the impact of various predictors on some response. Unfortunately, linear regression is not fit when the responses take on binary values. Instead, we should be using _logistic regression_.
+
+To use linear regression, we use code like this: `smf.ols("Y ~ X", data=df).fit()`. Logistic regression is not so different. Instead of calling `smf.ols`, we call `smf.logit`.
+
+```{python}
+# Fit Logistic Regression Model
+log_fit = smf.logit("Dummy ~ PTS", data=harden).fit()
+```
+
+**Predictions**. Now that we've fit the model, we can use it to make predictions. We see that if James Harden scores 20 points, there's a 55% chance the Rockets win. Similarly, if he scores 40 points, there's a 75% chance the Rockets win. 
+
+```{python}
+# Make dataframe with same input columns as the model
+pts = pd.DataFrame({"PTS": [20, 40, 50]})
+
+# Get Predictions
+log_fit.predict(pts)
+```
 
 
+This is much easier to see in a graph. 
+
+```{python}
+# Plot Wins and Losses
+plt.figure()
+plt.scatter(harden["PTS"], harden["Dummy"], alpha=0.2)
+plt.xlabel("Points Scored")
+plt.ylabel("Win (Win = 1, Loss = 0)")
+plt.axhline(0.5, color="gray", linestyle="--") # Show 50% cutoff
+plt.title("Rockets win probability vs points scored by James Harden")
+
+# Get Predicted Probabilities of Winning, At Various Values of `PTS`
+pts = np.linspace(harden["PTS"].min(), harden["PTS"].max(), 200)
+pred_df = pd.DataFrame({"PTS": pts}) # log_fit requires a data frame input
+p_hat = log_fit.predict(pred_df)     # get estimated probabilities
+
+# Add Logistic Regression Line 
+plt.plot(pts, p_hat, color="black")
+plt.ylim(-0.05, 1.05)
+plt.show()
+```
+
+**Interpretation.** Once again, we see that as the more points Harden scores, the more likely the Rockets are to win, but it is much clearer now. If Harden scores over ~15 points, the Rockets are more likely to win than lose. 
