@@ -177,3 +177,17 @@ np.exp(log_fit.params)
 
 **Interpreting odds.** Now, we can interpret this in a more natural way. For every extra point that Harden scores, the odds ($p / (1-p)$) of the Rockets winning is _multiplied_ by 1.046. In other words, the odds of winning increase by 4.6%. 
 
+
+---
+
+## Class Activity
+1. Choose a sport of interest. A great reference is: [https://www.sports-reference.com/](https://www.sports-reference.com/)   
+2. Identify a binary response variable   
+3. Perform a logistic regression:   
+  - Fit the model   
+  - Plot probabilities over a covariate  
+  - Produce a confusion matrix  
+  - Summarize your results. Interpret the regression coefficients.   
+4. Push your changes   
+
+
