@@ -26,10 +26,38 @@ $$
 p = \frac{1}{1 + \exp\left(-\left(\hat{\beta}_0 + \hat{\beta}_1 x\right) \right)}
 = \frac{\exp\left(\hat{\beta}_0 + \hat{\beta}_1 x \right)}{1 + \exp\left(\hat{\beta}_0 + \hat{\beta}_1 x \right)}.
 $$
+
+
+
+### Exploratory Data Analysis
+In this demonstration, we are going to examine the relationship between the number of points scored by James Harden and whether the Rockets would win or lose. The data comes from 545 games played by James Harden and the Houston Rockets from October 31, 2012 to April 9, 2019.
+
 ```{python}
+# Import Libraries
 import pandas as pd
+import numpy as np
+import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+
+# Load Data
+harden = pd.read_csv("data/harden_revised.csv", index_col=0)
 ```
 
+The first thing you should ever do when you get new data is to do some _exploratory data analysis_. You should orient yourself with what the data offers. What variables are considered? Does the data require additional data cleaning? 
+
+
+```{python}
+# Exploratory Data Analysis
+harden.head()
+```
+
+**Numerical Encoding.** Today, we'll keep things simple and only look at the relationship between winning games (`Result`) and the number of points James Harden scored in the game (`PTS`). 
+
+`Result` takes on character values of either `W` (win) or `L` (loss). Characters are harder to work with, so it customary to use a numerical encoding. In this dataset, we are provided that numerical encoding via the `Dummy` variable. It takes on a value of `0` for losses and `1` for wins. 
+
+**Plotting Results**. Now that we've narrowed the scope of our problem to identifying the relationship between scoring and winning games, we're going to start by plotting the data. 
+
+How valuable is James Harden to the Houston Rockets? As the figure shows below, the more points Harden scores, the more likely the Rockets are of winning games. However, aside from this surface-level observation, it's not clear just how much impact he has on the team.
 ## Logistic Regression
 
 
