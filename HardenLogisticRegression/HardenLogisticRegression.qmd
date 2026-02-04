@@ -12,7 +12,20 @@ Having a game-changing player in the NBA can affect how successful his team is t
 
 ![](https://thespun.com/.image/ar_1:1,c_fill,cs_srgb,fl_progressive,q_auto:good,w_1200/MTgzMTI4NTIwODI1Nzc1NDU2/brooklyn-nets-v-houston-rockets.jpg){width=250}
 
-## Linear Regression Review
+
+## Logistic Regression Review
+
+Logistic regression uses the machinery of linear regression, but adapts it for binary responses. The main limitation of linear regression is that the responses can be any real number. However, with binary responses, we are often interested in probabilities, which range between 0 and 1. 
+
+The way we adapt linear regression for logistic regression is by applying a _logit_ transform. We model the _log-odds_ with linear regression:
+$$
+\log\left(\frac{p}{1-p}\right) = \hat{\beta_0} + \hat{\beta}_1 x.
+$$
+After some mathematical manipulation, we can rewrite it in terms of probability: 
+$$
+p = \frac{1}{1 + \exp\left(-\left(\hat{\beta}_0 + \hat{\beta}_1 x\right) \right)}
+= \frac{\exp\left(\hat{\beta}_0 + \hat{\beta}_1 x \right)}{1 + \exp\left(\hat{\beta}_0 + \hat{\beta}_1 x \right)}.
+$$
 ```{python}
 import pandas as pd
 ```
