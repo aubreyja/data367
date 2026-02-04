@@ -115,3 +115,40 @@ plt.show()
 ```
 
 **Interpretation.** Once again, we see that as the more points Harden scores, the more likely the Rockets are to win, but it is much clearer now. If Harden scores over ~15 points, the Rockets are more likely to win than lose. 
+
+### Evaluation
+A _confusion matrix_ is a useful tool to identify how well our model identifies true successes and failures. In our example, it tells us whether Harden's scoring is a good predictor of whether or not the Rockets win. 
+
+```{python}
+# Import Confusion Matrix
+from sklearn.metrics import (confusion_matrix, accuracy_score)
+
+# True labels
+y_true = harden["Dummy"]
+
+# Predicted probabilities
+y_prob = log_fit.predict()
+
+# Convert to class labels (threshold = 0.5)
+y_pred = (y_prob >= 0.5).astype(int)
+
+# Confusion matrix
+cm = confusion_matrix(y_true, y_pred)
+pd.DataFrame(
+    cm,
+    index=["Actual Loss (0)", "Actual Win (1)"],
+    columns=["Predicted Loss (0)", "Predicted Win (1)"]
+)
+```
+
+**True Positives**. The model correctly predicted 339 wins. 
+
+**True Negatives**. The model correctly predicted 24 losses.
+
+**False Positives**. The model falsely predicted 169 wins.
+
+**False Negatives**. The model falsely predicted 13 losses.
+
+It looks like our model has a tendency to predict wins and is poor at predicting losses. Specifically, our model is able to predict ~96% of winning games, but only 12% of losing games. This results in a high false positive rate. 
+
+---
