@@ -1,0 +1,272 @@
+---
+title: "Logistic Regression: James Harden - Part 2"
+author: Notes adapted from Jason Spector, Jericho Lawson, and Aaron Ekstrom
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+**Purpose:** Each activity illustrates a little sports analytics, a little statistics and a little *Python*.
+
+*Sports Analytics:* Improve the model that we found in Part 1 — that used the number of points scored by James Harden to predict the result of the Rockets.
+
+*Statistics:* logistic regression, predictive accuracy, sensitivity, specificity
+
+*Python:* Continue our development and reinforcement of Python skills, including: reading a csv, manipulating data, adjusting thresholds of logistic modeling, and plotting.
+
+---
+
+## Model from Part 1
+
+### Reading the Data
+
+The data comes from 545 games played by James Harden and the Houston Rockets from October 31, 2012 to April 9, 2019.
+
+```{python}
+# Import Libraries
+import pandas as pd
+import numpy as np
+import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, accuracy_score
+
+# Load Data (already cleaned in Part 1)
+harden = pd.read_csv("data/harden_revised.csv", index_col=0)
+harden.head()
+```
+
+Recall from Part 1 that `Result` contains "W" or "L" and `Dummy` encodes wins as 1 and losses as 0.
+
+---
+
+### Creating the Model
+
+As in Part 1, we use `smf.logit` to fit a logistic regression model predicting `Dummy` from `PTS`. Then we use `predict()` to get the estimated probability of a Rockets win for each game.
+
+```{python}
+# Fit Logistic Regression Model
+log_fit = smf.logit("Dummy ~ PTS", data=harden).fit()
+
+# Get predicted probabilities for each game
+harden_probs = log_fit.predict()
+```
+
+We create a plot that combines the actual results of the Rockets vs. the points scored by Harden, and the probabilities given by our model.
+
+```{python}
+# Plot actual results and predicted probabilities
+plt.figure()
+plt.scatter(harden["PTS"], harden["Dummy"], alpha=0.2, label="Actual")
+plt.scatter(harden["PTS"], harden_probs, color="green", s=10, label="Predicted Prob")
+plt.xlabel("Points Scored")
+plt.ylabel("Win (Win = 1, Loss = 0)")
+plt.title("Rockets Wins based on Points Scored by James Harden")
+plt.legend()
+plt.show()
+```
+
+{{< pagebreak >}}
+
+---
+
+## Evaluating the Model
+
+We can now compare our predictions from the model to the actual results. As in Part 1, we use a confusion matrix. Here the threshold is 0.5: if the predicted probability is at least 0.5, we predict a win.
+
+```{python}
+# True labels
+y_true = harden["Dummy"]
+
+# Convert probabilities to class labels (threshold = 0.5)
+y_pred = (harden_probs >= 0.5).astype(int)
+
+# Confusion matrix
+cm = confusion_matrix(y_true, y_pred)
+cm_df = pd.DataFrame(
+    cm,
+    index=["Actual Loss (0)", "Actual Win (1)"],
+    columns=["Predicted Loss (0)", "Predicted Win (1)"]
+)
+cm_df
+```
+
+How we read this table:
+
+- **Predicted Loss column**: When the model predicted a loss, how many times was it actually a loss (true negative) vs. actually a win (false negative)?
+- **Predicted Win column**: When the model predicted a win, how many times was it actually a loss (false positive) vs. actually a win (true positive)?
+
+We can visualize this on our plot by adding a line at 0.5:
+
+```{python}
+plt.figure()
+plt.scatter(harden["PTS"], harden["Dummy"], alpha=0.2)
+plt.scatter(harden["PTS"], harden_probs, color="green", s=10)
+plt.axhline(y=0.5, color="purple", linestyle="-", label="Threshold = 0.5")
+plt.xlabel("Points Scored")
+plt.ylabel("Win (Win = 1, Loss = 0)")
+plt.title("Rockets Wins based on Points Scored by James Harden")
+plt.legend()
+plt.show()
+```
+
+---
+
+### Prediction Accuracy
+
+To quantify how accurate our model is, we compute metrics from the confusion matrix.
+
+```{python}
+print(cm_df)
+```
+
+```{python}
+# Total number of correct predictions
+correct = np.sum(y_pred == y_true)
+print(f"Correct predictions: {correct}")
+
+# Prediction accuracy
+accuracy = accuracy_score(y_true, y_pred)
+print(f"Prediction accuracy: {accuracy:.6f}")
+```
+
+The model's prediction accuracy is about 0.666.
+
+---
+
+### Sensitivity
+
+Here we focus on the model's behavior when the team actually won. Sensitivity measures: of all actual wins, how many did the model correctly predict?
+
+```{python}
+# Sensitivity = True Positives / (True Positives + False Negatives)
+sensitivity = cm[1, 1] / cm[1, :].sum()
+print(f"Sensitivity: {sensitivity:.7f}")
+```
+
+---
+
+### Specificity
+
+Here we focus on the model's behavior when the team actually lost. Specificity measures: of all actual losses, how many did the model correctly predict?
+
+```{python}
+# Specificity = True Negatives / (True Negatives + False Positives)
+specificity = cm[0, 0] / cm[0, :].sum()
+print(f"Specificity: {specificity:.7f}")
+```
+
+---
+
+### Putting It Together
+
+So the model's sensitivity is about 0.963 (excellent), its specificity is about 0.124 (terrible), and its overall prediction accuracy is about 0.666.
+
+The overall prediction accuracy seems pretty good, but it looks much better than it is. If your model ALWAYS predicted a win, it would have been correct 352 out of 545 times, giving a prediction accuracy of 0.646. So our model is not much better than just always predicting a win.
+
+{{< pagebreak >}}
+
+---
+
+## Adjusting Our Model
+
+One thing we can do is balance out the predicted wins and predicted losses by adjusting the threshold. In the original model, if the predicted probability is at least 0.5, we predict a win. What if we raised that threshold to 0.55 or 0.6?
+
+```{python}
+# Try threshold = 0.55
+y_pred_55 = (harden_probs >= 0.55).astype(int)
+cm_55 = confusion_matrix(y_true, y_pred_55)
+
+cm_55_df = pd.DataFrame(
+    cm_55,
+    index=["Actual Loss (0)", "Actual Win (1)"],
+    columns=["Predicted Loss (0)", "Predicted Win (1)"]
+)
+print(cm_55_df)
+print(f"Accuracy:    {accuracy_score(y_true, y_pred_55):.7f}")
+print(f"Sensitivity: {cm_55[1, 1] / cm_55[1, :].sum():.7f}")
+print(f"Specificity: {cm_55[0, 0] / cm_55[0, :].sum():.7f}")
+```
+
+Of course, we can use Python to automate this investigation across many thresholds.
+
+```{python}
+# Thresholds to investigate
+potential_thresholds = [0.5, 0.55, 0.6, 0.65, 0.7]
+
+accuracies = []
+sensitivities = []
+specificities = []
+
+for threshold in potential_thresholds:
+    y_pred_t = (harden_probs >= threshold).astype(int)
+    
+    acc = accuracy_score(y_true, y_pred_t)
+    accuracies.append(acc)
+    
+    cm_t = confusion_matrix(y_true, y_pred_t, labels=[0, 1])
+    
+    # Sensitivity: TP / (TP + FN)
+    sens = cm_t[1, 1] / cm_t[1, :].sum() if cm_t[1, :].sum() > 0 else 0.0
+    sensitivities.append(sens)
+    
+    # Specificity: TN / (TN + FP)
+    spec = cm_t[0, 0] / cm_t[0, :].sum() if cm_t[0, :].sum() > 0 else 0.0
+    specificities.append(spec)
+
+results_table = pd.DataFrame({
+    "Accuracy": accuracies,
+    "Sensitivity": sensitivities,
+    "Specificity": specificities
+}, index=potential_thresholds)
+results_table.index.name = "Threshold"
+print(results_table)
+```
+
+We can create a plot that visualizes the table above.
+
+```{python}
+plt.figure()
+plt.plot(potential_thresholds, accuracies, "o-", color="red", label="Accuracy")
+plt.plot(potential_thresholds, sensitivities, "o-", color="blue", label="Sensitivity")
+plt.plot(potential_thresholds, specificities, "o-", color="green", label="Specificity")
+plt.xlabel("Threshold")
+plt.ylabel("")
+plt.title("Prediction Results with Differing Thresholds")
+plt.ylim(0, 1)
+plt.legend()
+plt.show()
+```
+
+{{< pagebreak >}}
+
+---
+
+## Group Activity
+
+Continuation of the activity from Part 1.
+
+1. Choose a sport you wish to investigate.
+
+2. Determine variables you wish to perform a logistic regression and analysis on.
+Remember that the response variable must be binary.
+
+3. Get the appropriate data by downloading it.
+(You may want to revisit your decisions for steps 1 and 2 if this proves difficult...)
+
+4. Perform the logistic regression.
+
+5. Use your resulting model to predict the results from your data as we did above.
+Create a confusion matrix that compares predicted results to actual results.
+Create a plot that includes points for each actual result, points for each predicted probability, and a line at the cutoff (presumed to be 0.5).
+
+6. Compute the prediction accuracy, sensitivity, and specificity of the model you created.
+
+Turn in your resulting QMD file and your CSV data file on Github CLassroom by the end of class.
+
+For the Python Assignment that is due next Monday, you will need to determine if the statistic you identified/created in part 1 is suitable for prediction. In addition to the steps above:
+
+7. Determine a threshold that will maximize the prediction accuracy of your model.
+Be sure to include tables and graphs that support your answer.
+
+The Python 2 assignment will be posted as a seperate Github Classroom assignment.
