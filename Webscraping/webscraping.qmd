@@ -1,0 +1,307 @@
+---
+title: "Webscraping"
+author: Jeff Mei
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+## Motivation
+
+**Webscraping**. Most data does not come in nicely assorted CSV files, it comes as unstructured information on the web. _Webscraping_ is the process of programmatically extracting information from the web. 
+
+Manually copying and pasting the data by hand is prone to mistakes and tedious. Programmatically extracting the information enables us to systematically capture large amounts of information. This is especially useful if you want to track data in real-time (e.g. as the season develops). 
+
+**Legality**. While webscraping is a powerful tool, not all websites allow automated data collection. Websites may block or ban IP addresses that send too many requests in a short period of time. Aggressive scraping can overload servers and disrupt normal users. For this reason, be mindful to scrape slowly (avoid scraping in loops, or if you do, set a timer to slow down the frequency).
+
+Before scraping a site, you should always check whether automated access is permitted. To check, you can go to `https://website.com/robots.txt` to see their preferences.
+
+
+
+
+## Overview
+While webscraping is less tedious than manually copying data, it can still be a challenging and frustrating process. 
+
+Websites are optimized for user experience. It is a concoction of HTML, CSS, and JavaScript. HTML is the backbone of a website. It determines the structure of the website, and more importantly, includes the content. CSS builds on top of this and makes the content pretty. If the website has dynamic elements, JavaScript dictates the logic. In all, a modern website has many components to maximize user experience. For our needs, these components are extraneous, and we must wade through them to access our data.
+
+### Background: The Client Server Model
+When we visit a website, what exactly is happening? From our perspective, we type in the website's URL, we press enter, and the website pops up. Behind the scenes is a more involved process. 
+
+1. **Identify the URL**. We decide who we are trying to get information from.  
+2. **Send request**. To access a website we must request information from the server. Access may be denied if they deem the request is from an untrusted source. Some servers will deny access to clients with suspicious behaviors (e.g. bots).  
+3. **Website returns HTML code**. If the server grants our request, it sends the corresponding HTML code to construct the website. The HTML is not the rendered website -- it is only the instructions to build it.  
+4. **Our browser constructs the website**.   
+
+Read More:   
+- Client-Server Model  
+- Document-Object Model (DOM)  
+
+**Relevance**:  
+Why are we discussing this? Because this is basically how we webscrape. We do steps 1-3, but stop short of reconstructing the website. We identify what website we want to extract data from, we send a request for their data, and if they grant us access, we must parse through the HTML.  
+
+Because of this, we need to understand a little bit about HTML before we talk about webscraping. 
+
+### Basics of HTML 
+Hypertext Markup Language (HTML) is the backbone of any website. It dictates what content goes where. But what does HTML look like? We give a basic example of what a HTML table might look like below. 
+
+```HTML
+<table id="superbowl_stats">
+
+  <tr>
+    <th>Year</th>
+    <th>Winner</th>
+    <th>Loser</th>
+  </tr>
+
+  <tr>
+    <td>2026</td>
+    <td>Seattle Seahawks</td>
+    <td>New England Patriots</td>
+  </tr>
+
+</table>
+```
+
+#### HTML Components
+What do all these letters mean? For our purposes, the three essential HTML components are  
+- **Content**: This is the data we are trying to access. In the example above, that's `Seattle Seahawks` and `New England Patriots`.  
+- **Tags**: These are contained within matching angle brackets: `<TAG> ... </TAG>`. In the above HTML, `<table>`, `<tr>` (table row), and `<td>` (table data) are examples of tags. These designate the hierarchical structure of the document. The content is within a `<td>` tag, which is contained within the `<tr>` tag, which is within the `<table>` tag.  
+- **Attributes**: Tags can carry additional information; these are called attributes. In the example, `id` is an attribute that gives the table a unique identifier that we can search for.  
+
+To pull the data from HTML, we need to identify a way of systematically defining the content we want to pull. In the example above, all of our data is held in `<td>` tags. In other examples, this might be different. Every website is built different. Next, we will see how we webscrape on a real example.  
+
+
+
+
+## Example: NCAA Division 1 Women's Soccer 
+Some data is available online, but is not readily available for download. One example is this  [2018-2019 NCAA Division 1 Women’s Soccer data](https://stats.ncaa.org/rankings/institution_trends?academic_year=2019.0&division=1.0&sport_code=WSO). 
+
+To start, we utilize two new libraries: `requests` and `BeautifulSoup`. The `requests` library is used for sending a HTTP GET request to a URL and retrieving the corresponding HTML content. HTML code is extremely unstructured, so the `BeautifulSoup` package is used to parse the HTML code. 
+
+```{python}
+import requests               # getting HTML
+from bs4 import BeautifulSoup # parsing HTML
+```
+
+**Requesting HTML Content**. The first step in webscraping is identifying a website and sending a GET request. If we are successful, `html_content` will contain the raw HTML as a string. Sometimes, however, websites determine that we are using an automated system and will deny access. 
+
+```{python}
+# Identify URL
+url = "https://stats.ncaa.org/rankings/institution_trends?academic_year=2019.0&division=1.0&sport_code=WSO"
+headers = {"User-Agent": "Mozilla/5.0 (compatible; webscraping-class/1.0)"}
+  # pretend this request is coming from an ordinary browser
+
+# Request HTML Content
+resp = requests.get(url, headers=headers, timeout=30)
+resp.raise_for_status()  # check for HTTP error (e.g. 403 forbidden, 404 not found, etc.)
+html_content = resp.text # raw HTML as a string
+print(html_content[0:1000]) # show HTML snippet
+```
+
+**Parsing HTML Content**. At this point, we have successfully retrieved the HTML code as a string. As we can see from above, it's not very easy on the eyes. The `BeautifulSoup` package is used to parse through this ugly mess and access the data we're looking for. 
+
+So far, we have `html_content` as a string. This can be inefficient to search through because strings have no structure. However, we _know_ the HTML has a hierarchical structure. We invoke it again by calling the `BeautifulSoup` function. This creates an object that we can use to parse the HTML. 
+
+```{python}
+# Extract HTML from Website
+soup = BeautifulSoup(html_content, "html.parser")
+```
+
+The most important function in the `BeautifulSoup` package is `find_all()`. It is used to search for key words in tags. From the HTML string outputted above, we see this line.  
+
+```HTML 
+<title>NCAA Statistics</title>
+```
+
+To extract it, we call `find_all()` to search through all `<title>` tags in the HTML.
+
+```{python} 
+# Find all <title> tags 
+title = soup.find_all("title") 
+print(title)
+```
+
+This still looks a little ugly because it contains the tags. To extract the content, we call the `get_text()` function.
+
+```{python}
+# Extract Content
+title[0].get_text() 
+  # note: we need the index [0], because title is a list, 
+  #   and .get_text() operates on strings.
+```
+
+Maybe this example is too easy. Often times, we have multiple tags. For example, let's look for the table headers. We search the HTML for all `<th>` tags. 
+
+```{python}
+# Find all <th> tags (table headers) 
+soup.find_all("th") 
+```
+
+We see we have the correct table headers in here, but we also observe there are duplicates. Notice that one pair of duplicates has a class and the other does not. We exploit this fact to filter the tags we search through. We want to search through `<th class="align_right no padding">` tags: 
+
+```{python}
+soup.find_all("th", class_="align_right no_padding")
+```
+
+Once again, we can clean this up and extract the relevant content via `.get_text()`: 
+
+```{python}
+col_labels = soup.find_all("th", class_="align_right no_padding")
+[tag.get_text() for tag in col_labels]
+```
+
+**Extra Tip**: Sometimes, the HTML document is very large and may contain multiple tables. It helps to narrow the search down to a specific table. The variable `soup` contains all of the HTML from the document, the next code snippet narrows it down to `table`. 
+
+In this particular example, there are three `<table>` tags. We looked through the HTML and identified that the third table (index `[2]`) is the table that contains the information we're searching for. 
+
+It is generally a good idea to subset the HTML in this way. It makes our searches more accurate. 
+
+```{python} 
+# Find Tables on the Page
+table = soup.find_all("table")[2]
+  # we determine to use the 2nd index through investigation
+  # you will have to figure out yourself which table 
+```
+
+
+
+These is the basics of `BeautifulSoup`. We use `find_all()` to filter through tags, and `get_text()` to extract the content. 
+
+So far, we have assumed we knew what tags to search for. Next, we discuss how we can find the tags ourselves using Developer Tools. 
+
+### Inspecting Websites - Developer Tools
+
+**Right Click > Inspect.** Every website will show you the HTML code needed to build it. Right click anywhere on a website, and select the `Inspect` option. You will see the developer tools pop up in the bottom of the page.
+
+This shows you the HTML code. 
+
+![](developer-tools.png)
+
+If you click on the top left button on the developer panel (equivalently, `Ctrl + Shift + C`) and move your mouse around the page, various web elements will be highlighted alongside the corresponding HTML code. This is a good way of identifying what part of the HTML code you want to extract.
+
+**Right Click on HTML > Copy > CSS Selector.** This gives you a pattern to identify a specific HTML element. This is _essential_ for webscraping. 
+
+This is the output from the CSS Selector applied on the above image: 
+
+```CSS
+tr.text:nth-child(1) > td:nth-child(3)
+```
+
+Roughly speaking, the CSS Selector gives a location of where the data is. For example, the above output says within the first `<tr>` tag, there's a `<td>` tag. Our data is in the 3rd of those `<td>` tags. 
+ 
+We have previously used `find_all` to search through tags. We introduce `select`, which is very similar, but it uses CSS language. This allows us to directly input the CSS Selector path into our function to extract the data.
+
+```python
+table.select("tr.text:nth-child(1) > td:nth-child(3)")
+```
+
+Great, this gives us the element we're interested in. However, we're often interested in the entire column. This CSS selector says that there are 14 goals for the 1st row and 3rd column. If we just want the third column, we might try simplifying the CSS Selector to just `td:nth-child(3)`.
+
+```{python} 
+table.select("td:nth-child(3)")[0:3] # subset for demo
+```
+
+Now, we can extract the information using `.get_text()`. We set `strip=True` to remove excess text. 
+
+```{python}
+# CSS Selector: tr.text:nth-child(1) > td:nth-child(3)
+css_string = "td:nth-child(3)"
+goals = [
+  tag.get_text(strip=True) 
+  for tag in table.select(css_string)
+]
+
+# CSS Selector: tr.text:nth-child(2) > td:nth-child(1) > a:nth-child(1)
+css_string = "td:nth-child(1) > a:nth-child(1)"
+institution = [
+  tag.get_text(strip=True) 
+  for tag in table.select(css_string)
+]
+
+# CSS Selector: tr.text:nth-child(2) > td:nth-child(2)
+css_string = "td:nth-child(2)"
+conference = [
+  tag.get_text(strip=True) 
+  for tag in table.select(css_string)
+]
+
+# CSS Selector: tr.text:nth-child(1) > td:nth-child(4)
+css_string = "td:nth-child(4)"
+assists = [
+  tag.get_text(strip=True) 
+  for tag in table.select(css_string)
+]
+```
+
+Finally, we can aggregate all of our data into a data frame. Unfortunately, our web scraping is imperfect. Sometimes, we collected the total sums at the bottom of the table. Sometimes, we collected some extra blank cells at the beginning of the table. We do some manual clean up, and use the `.pop` function to remove first and last elements of the table. We will discuss data wrangling in a future class, so do not worry if your data is not perfectly aligned. The focus of today's class is grabbing data from the internet.
+
+```{python}
+# Data Cleaning: Remove excess values (determined by investigation)
+conference.pop() # remove first element
+goals.pop() # exclude first element
+assists.pop()
+
+# Aggregate into DataFrame
+import pandas as pd
+soccer = pd.DataFrame({
+  "institution": institution,
+  "conference": conference,
+  "goals": goals,
+  "assists": assists
+})
+print(soccer)
+```
+
+## Conclusion
+All in all, webscraping is a messy business. It can be frustrating, and requires a lot of guesswork. To make things easier, here's a template you can copy into your own webscraper. 
+
+```python 
+# Identify URL 
+url = "..."
+
+# Identify Yourself
+headers = {"User-Agent": "Mozilla/5.0 (compatible; webscraping-class/1.0)"}
+
+# Request HTML Content 
+resp = requests.get(url, headers=headers, timeout=30)
+resp.raise_for_status()
+
+# Extract HTML from Website
+html_content = resp.text
+
+# Parse HTML Content
+soup = BeautifulSoup(html_content, "html.parser")
+```
+
+Optional: At this point, you might want to subset your HTML, especially if the page is long. For example, with `table = soup.find_all("table")[YOUR_INDEX]`. In practice, you may be looking for tag other than `table`, and you have to figure out `YOUR_INDEX` yourself by looking at the HTML directly.
+
+Whether you decide to subset the data or not, we can use the CSS Selector tool to get a CSS string and use the `select` function to grab the relevant HTML. Finally, we use `get_text` to clean up the tags and extract the content. 
+
+```python 
+# Use CSS Selector to get css_string
+css_string = "..." # e.g. td:nth-child(1) > a:nth-child(1)
+
+# Extract Text from Tags
+assists = [
+  tag.get_text(strip=True)           # extract content 
+  for tag in soup.select(css_string) # from each tag matching 
+]                                    #  the CSS string
+```
+
+
+## In-Class Exercise
+For today's in-class exercise, we're going to try to apply what we've learned today on a couple of websites. Start in any order, they should be roughly the same difficulty. 
+
+**[Wikipedia Super Bowl Champions](https://en.wikipedia.org/wiki/List_of_Super_Bowl_champions)**: This is a history of past Super Bowl champions. Some variables you might want to extract include  
+- winner  
+- loser   
+- city  
+
+**[Mountain Project](https://www.mountainproject.com/area/classics)**: This site aggregates information about outdoor rock climbing. Some variables you might want to extract include  
+- name of climb  
+- location  
+- difficulty  
+
+If you finish early, you can try to find a different website and try to extract some information. At the end of class, push your changes to GitHub classroom. 
+
