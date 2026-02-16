@@ -1,0 +1,293 @@
+---
+title: "Webscraping Day 2: Regression Analysis"
+author: Jeff Mei, Jason Aubrey
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+## Recap
+
+In our last activity, you learned how to programmatically extract data from the web using `requests` and `BeautifulSoup`. You should now have a working `.qmd` file that scrapes at least 4 columns of data from an NCAA statistics page and stores them in a Pandas DataFrame.
+
+Today, we build on that foundation. Instead of just collecting data, we will **analyze** it. Specifically, we will use **multiple linear regression** to explore which offensive statistics best explain scoring.
+
+## Overview
+
+Today's activity has six steps:
+
+1. Navigate to https://stats.ncaa.org, and choose a sport. Webscrape scoring and at least three other statistics from the sport of your choosing for 2024-2025. (It can be the same sport as before.)
+2. Clean up the data and create a DataFrame.
+3. Run a multiple regression with the three offensive statistics explaining scoring.
+4. Determine which statistics are significant and which are insignificant.
+5. Create a new composite variable using the significant statistics.
+6. Fit a linear model using your new variable to explain scoring. Report the equation, $R^2$, and standard error.
+
+
+## Step 1: Webscrape Scoring and Offensive Statistics
+
+You've done this before! Use the same workflow from Day 1. As a refresher, here is the template:
+
+```python
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+# Identify URL
+url = "..."
+headers = {"User-Agent": "Mozilla/5.0 (compatible; webscraping-class/1.0)"}
+
+# Request HTML Content
+resp = requests.get(url, headers=headers, timeout=30)
+resp.raise_for_status()
+html_content = resp.text
+
+# Parse HTML Content
+soup = BeautifulSoup(html_content, "html.parser")
+
+# (Optional) Narrow down to a specific table
+table = soup.find_all("table")[YOUR_INDEX]
+
+# Use CSS Selector for each column
+css_string = "..."  # e.g. td:nth-child(3)
+my_column = [
+  tag.get_text(strip=True)
+  for tag in table.select(css_string)
+]
+```
+
+**Important**: Make sure one of your columns is **scoring** (goals, points, runs, etc.). This will be our response variable. The other three columns should be offensive statistics that you think might help explain scoring (e.g., assists, shots on goal, possession percentage, first downs, etc.).
+
+## Step 2: Clean Up the Data
+
+Raw webscraping output is almost always messy. Before we can do any analysis, we need to clean things up.
+
+### Common Issues and How to Fix Them
+
+**Numeric columns stored as strings.** After webscraping, your data will come in as strings. You need to convert them to numbers before doing regression.
+
+```{python}
+#| eval: false
+# Convert a column to numeric
+df["goals"] = pd.to_numeric(df["goals"], errors="coerce")
+```
+
+The `errors="coerce"` argument tells Pandas to replace values it can't convert with `NaN` instead of crashing. If you see unexpected `NaN` values after conversion, inspect the original strings for hidden formatting issues.
+
+**Commas in numbers.** A value like `"1,234"` will fail to convert directly. Strip the commas first:
+
+```{python}
+#| eval: false
+df["attendance"] = df["attendance"].str.replace(",", "")
+df["attendance"] = pd.to_numeric(df["attendance"], errors="coerce")
+```
+
+**Extra whitespace.** Trailing spaces or tabs can cause problems, especially when comparing strings. Use `.str.strip()`:
+
+```{python}
+#| eval: false
+df["team"] = df["team"].str.strip()
+```
+
+**Removing junk rows.** Sometimes webscraping captures totals, headers, or blank rows. Drop them:
+
+```{python}
+#| eval: false
+# Drop rows with missing values
+df = df.dropna()
+
+# Or remove specific rows by index
+df = df.drop(index=[0, len(df)-1])
+
+# Reset index after dropping
+df = df.reset_index(drop=True)
+```
+
+**Splitting combined fields.** If a single cell contains multiple pieces of information (e.g. `"10-5"` for wins and losses), you can split it:
+
+```{python}
+#| eval: false
+# Split a "W-L" column into two separate columns
+df[["wins", "losses"]] = df["record"].str.split("-", expand=True)
+```
+
+### Useful Python Functions for Data Cleaning
+
+Here is a quick reference of string cleaning tools:
+
+- `str.replace(old, new)`: Replace all occurrences of a substring. Example: `df["col"].str.replace(",", "")`
+- `str.strip()`: Remove leading and trailing whitespace. Example: `df["col"].str.strip()`
+- `str.split(sep, expand=True)`: Split a string into multiple columns by a delimiter.
+- `pd.to_numeric(series, errors="coerce")`: Convert to numeric; non-convertible values become `NaN`.
+
+::: {.callout-tip}
+## Debugging Tip
+If `pd.to_numeric()` produces unexpected `NaN` values, inspect the raw strings:
+
+```python
+# See unique values in a column before conversion
+print(df["my_column"].unique())
+```
+
+This often reveals hidden characters, extra spaces, or formatting you didn't expect.
+:::
+
+### Build Your DataFrame
+
+After cleaning, you should have a DataFrame with at least 4 numeric columns: one for scoring and three for offensive statistics. Verify this before moving on:
+
+```{python}
+#| eval: false
+print(df.dtypes)
+print(df.head())
+print(df.shape)
+```
+
+
+## Step 3: Multiple Regression
+
+Now for the fun part. We want to see which offensive statistics help explain scoring. We use **multiple linear regression**, which models the relationship:
+
+$$
+\text{Scoring} = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_4 + \varepsilon
+$$
+
+where $x_1, x_2, x_3, x_4$ are four offensive statistics. (Remember, you can use three or more predictors, but you must have at least three.)
+
+We will use the `statsmodels` library, which gives us detailed regression output similar to R.
+
+```{python}
+#| eval: false
+import statsmodels.api as sm
+
+# Define response and predictors
+y = df["goals"]                                  # response variable
+X = df[["assists", "shots", "corners", "fouls"]] # predictor variables
+
+# Add an intercept column (statsmodels does not include one by default)
+X = sm.add_constant(X)
+
+# Fit the model
+model = sm.OLS(y, X).fit()
+
+# Print the summary
+print(model.summary())
+```
+
+::: {.callout-note}
+## Why `sm.add_constant()`?
+Unlike some other libraries, `statsmodels` does not automatically include an intercept ($\beta_0$) in the model. Calling `sm.add_constant(X)` adds a column of 1s to your predictor matrix, which serves as the intercept term. If you forget this, your model is forced through the origin, which is usually not what you want.
+:::
+
+
+## Step 4: Determine Significance
+
+Look at the regression summary output. For each predictor, check the **p-value** (listed under `P>|t|`).
+
+- If the p-value is **less than 0.05**, we consider the variable **statistically significant**.
+- If the p-value is **greater than 0.05**, we consider it **not significant**.
+
+```{python}
+#| eval: false
+# Extract p-values programmatically
+print(model.pvalues)
+```
+
+Write down which of your predictor statistics are significant and which are not. You will use this in the next step.
+
+
+## Step 5: Create a New Composite Variable
+
+Using only the **significant** predictors from Step 4, create a new variable that combines them. Use the regression coefficients to determine the appropriate ratio.
+
+For example, if `assists` ($\hat{\beta}_1 = 0.8$) and `shots` ($\hat{\beta}_2 = 0.2$) were significant, you might create:
+
+$$
+\text{new\_stat} = 0.8 \cdot \text{assists} + 0.2 \cdot \text{shots}
+$$
+
+```{python}
+#| eval: false
+# Extract coefficients
+print(model.params)
+
+# Create composite variable using significant predictors
+# Replace with YOUR significant variables and coefficients
+df["new_stat"] = 0.8 * df["assists"] + 0.2 * df["shots"]
+```
+
+::: {.callout-tip}
+## Interpreting Coefficients
+The coefficients tell you the relative weight of each predictor. A coefficient of 0.8 on assists means that, holding all else equal, one additional assist is associated with a 0.8 increase in scoring. Use the coefficients from _your_ model — the ones above are just examples.
+:::
+
+
+## Step 6: Simple Linear Regression with New Variable
+
+Now fit a **simple linear regression** using only your new composite variable to explain scoring.
+
+```{python}
+#| eval: false
+# Define new model
+y = df["goals"]
+X_new = sm.add_constant(df["new_stat"])
+
+# Fit simple linear regression
+model_new = sm.OLS(y, X_new).fit()
+
+# Print summary
+print(model_new.summary())
+```
+
+From the output, report the following three quantities:
+
+**Equation:**
+$$
+\widehat{\text{Scoring}} = \hat{\beta}_0 + \hat{\beta}_1 \cdot \text{new\_stat}
+$$
+
+Fill in $\hat{\beta}_0$ and $\hat{\beta}_1$ with the values from your output.
+
+**$R^2$**: Found in the summary output as `R-squared`. This tells you what proportion of the variance in scoring is explained by your new variable.
+
+**Standard Error of the Model**: Found in the summary output. You can also compute the residual standard error as:
+
+```{python}
+#| eval: false
+import numpy as np
+# Residual Standard Error
+n = len(y)
+p = 1  # number of predictors (just new_stat)
+rse = np.sqrt(model_new.ssr / (n - p - 1))
+print(f"Residual Standard Error: {rse:.4f}")
+```
+
+
+## Tips and Tricks
+
+### General Debugging
+
+- **Check your data types early.** Run `df.dtypes` right after creating the DataFrame. If numeric columns show `object`, they are still strings and need to be converted.
+- **Inspect before you transform.** Before converting or cleaning a column, look at a few values with `df["col"].head(10)` or `df["col"].unique()`. This helps you catch surprises.
+- **Use `errors="coerce"` defensively.** When calling `pd.to_numeric()`, always pass `errors="coerce"` so that bad values become `NaN` instead of causing a crash. Then check for NaN with `df.isna().sum()`.
+
+### CSS Selector Issues
+
+- **CSS tag starts with `.left` or something unexpected?** Try replacing it with a simpler tag like `td`. When in doubt, try to simplify the CSS selector to patterns that have worked before.
+- **Multiple tables on a page?** Use `soup.find_all("table")` and investigate which index contains your data. Print `len(soup.find_all("table"))` to see how many tables there are.
+
+### Regression Gotchas
+
+- **"Singular matrix" error**: This means your predictors are perfectly correlated (or one is a constant). Check for duplicate columns or columns with zero variance.
+- **Unexpected signs on coefficients**: This can happen in multiple regression due to multicollinearity. It doesn't necessarily mean your model is wrong, but it's worth investigating.
+- **Very low $R^2$**: Your predictors may not be strongly related to scoring, or the data may need more cleaning. Check for outliers with `df.describe()`.
+
+### Don't Just Copy and Paste
+
+The code in this document is meant to be a template. You will need to adapt variable names, column indices, CSS selectors, and cleaning steps to fit your specific dataset. **Make sure you understand what each line does** — if something is unclear, ask!
+
+
+## Submission
+
+Turn your completed `.qmd` file into the appropriate Gradescope assignment. It is due at the end of class.
