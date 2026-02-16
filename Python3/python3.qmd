@@ -1,0 +1,396 @@
+---
+title: "Python Assignment 3 — Regression in Yet Another Sport (Webscraping + Modeling)"
+format:
+  html: default
+  pdf: default
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Overview
+
+In this assignment you will:
+
+1. **Webscrape** team-level statistics from an NCAA statistics page.
+2. **Clean** the scraped data into a usable `pandas` DataFrame.
+3. Fit a **multiple linear regression** model explaining *scoring* using at least **three** offensive statistics.
+4. Use the model output to create a **new composite statistic** (your own “single-number” predictor).
+5. Fit a **simple linear regression** model using your new statistic to explain scoring.
+6. Check whether your model is suitable for prediction by verifying key regression assumptions.
+
+You will submit this `.qmd` file (with code + narrative) to your GitHub Classroom repository.
+
+---
+
+## Rules and Deliverables
+
+- Your analysis must be based on **webscraped** data (not a downloaded CSV).
+- Your DataFrame must contain:
+  - one **scoring** variable (e.g., points per game, goals per game, runs per game),
+  - at least **three** additional *offensive* statistics.
+- You must include **at least one plot** for each diagnostic check in the “Model Diagnostics” section.
+- Your write-up must be understandable to someone who has not seen your code.
+
+---
+
+## Setup
+
+```{python}
+import requests
+import pandas as pd
+import numpy as np
+from bs4 import BeautifulSoup
+
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+```
+
+::: {.callout-note}
+### Tip
+If your scrape fails, check:
+- the URL is correct,
+- you have a User-Agent header,
+- the table you want is actually present in the HTML (sometimes it is loaded by JavaScript).
+:::
+
+---
+
+## Part A — Webscrape (NCAA stats)
+
+### A1. Choose your sport + page
+
+Go to <https://stats.ncaa.org> and navigate to a page with **team** statistics for a sport and season.
+
+- Sport: **TODO**
+- Season: **TODO** (e.g., 2024–2025)
+- Scoring variable: **TODO** (be explicit, e.g., “Points Per Game”)
+
+Paste your final URL here:
+
+- URL: **TODO**
+
+### A2. Download the HTML and locate the table
+
+```{python}
+# TODO: paste your URL
+url = "PASTE_URL_HERE"
+
+headers = {"User-Agent": "Mozilla/5.0 (compatible; sports-analytics-class/1.0)"}
+resp = requests.get(url, headers=headers, timeout=30)
+resp.raise_for_status()
+
+html = resp.text
+soup = BeautifulSoup(html, "html.parser")
+
+# TODO: inspect how many tables exist
+tables = soup.find_all("table")
+len(tables)
+```
+
+Now identify which `tables[i]` contains the rows you want.
+
+```{python}
+# TODO: set the correct table index
+table_index = 0
+table = tables[table_index]
+```
+
+### A3. Extract at least 4 columns into lists
+
+You must scrape:
+- team name (or team ID),
+- scoring column,
+- at least 3 additional offensive columns.
+
+You can use CSS selectors like `td:nth-child(k)` **or** parse by row and pull out all the cells.
+
+Below is a **row-based** approach (recommended because it is less fragile than `nth-child`):
+
+```{python}
+rows = table.find_all("tr")
+
+data = []
+for r in rows:
+    cells = [c.get_text(strip=True) for c in r.find_all(["th", "td"])]
+    if len(cells) == 0:
+        continue
+    data.append(cells)
+
+# Peek at a few rows to understand the structure
+data[:5]
+```
+
+Now turn your scraped rows into a DataFrame.
+
+```{python}
+# TODO: Choose the correct header row and data rows.
+# Often the first row (or first few rows) are headers.
+header = data[0]          # TODO: adjust if needed
+body = data[1:]           # TODO: adjust if needed
+
+df_raw = pd.DataFrame(body, columns=header)
+
+df_raw.head()
+```
+
+---
+
+## Part B — Clean the Data
+
+### B1. Keep only the columns you need
+
+Create a cleaned DataFrame with exactly the columns you will use.
+
+```{python}
+# TODO: replace with your column names as they appear in df_raw.columns
+keep_cols = ["Team", "Scoring", "Stat1", "Stat2", "Stat3"]
+
+df = df_raw[keep_cols].copy()
+df.head()
+```
+
+### B2. Convert numeric columns from strings to numbers (if necessary)
+
+Scraped “numbers” sometimes arrive as strings (type `object`). Convert them carefully.
+
+```{python}
+# TODO: rename these to your real columns
+numeric_cols = ["Scoring", "Stat1", "Stat2", "Stat3"]
+
+for c in numeric_cols:
+    # common cleanup: commas, percent signs, extra whitespace
+    df[c] = (df[c]
+             .astype(str)
+             .str.replace(",", "", regex=False)
+             .str.replace("%", "", regex=False)
+             .str.strip()
+            )
+    df[c] = pd.to_numeric(df[c], errors="coerce")
+
+# Drop rows with missing values created by coercion
+df = df.dropna().reset_index(drop=True)
+
+df.dtypes
+```
+
+### B3. Quick sanity checks
+
+```{python}
+df.shape
+df.head()
+df.describe()
+```
+
+**In 2–4 sentences**, explain any cleaning decisions you made (e.g., dropped rows, removed totals, fixed percent signs).
+
+- **TODO (write-up):**
+
+---
+
+## Part C — Multiple Regression (3+ predictors)
+
+### C1. Define response and predictors
+
+Let your scoring variable be the response `y`, and your offensive stats be predictors `X`.
+
+```{python}
+# TODO: replace these with your real column names
+y = df["Scoring"]
+X = df[["Stat1", "Stat2", "Stat3"]]  # add more if you want
+
+X = sm.add_constant(X)  # adds intercept term
+model = sm.OLS(y, X).fit()
+
+print(model.summary())
+```
+
+### C2. Significance and interpretation
+
+1. List which predictors are statistically significant at the 0.05 level.
+2. Briefly interpret **one** coefficient (in context of the sport).
+
+```{python}
+model.pvalues
+```
+
+- **Significant predictors (p < 0.05):** TODO  
+- **Not significant predictors:** TODO  
+- **Interpretation (2–4 sentences):** TODO
+
+---
+
+## Part D — Build a New Composite Statistic
+
+### D1. Define your composite statistic
+
+Using **only the significant predictors**, define:
+
+\[
+\text{new\_stat} = w_1 x_1 + w_2 x_2 + \cdots
+\]
+
+A natural choice is to use the fitted regression coefficients as weights.
+
+```{python}
+model.params
+```
+
+Now create `new_stat` in your DataFrame.
+
+```{python}
+# TODO: replace these with your significant predictors and weights.
+# Example:
+# df["new_stat"] = 0.8 * df["Stat1"] + 0.2 * df["Stat2"]
+
+df["new_stat"] = 0.0  # TODO: delete this placeholder and implement your formula
+df.head()
+```
+
+Explain your formula clearly (including the coefficients you used).
+
+- **TODO (write-up):**
+
+---
+
+## Part E — Simple Regression Using `new_stat`
+
+Fit:
+
+\[
+\widehat{\text{Scoring}} = \hat\beta_0 + \hat\beta_1 \cdot \text{new\_stat}.
+\]
+
+```{python}
+X_new = sm.add_constant(df["new_stat"])
+model_new = sm.OLS(y, X_new).fit()
+print(model_new.summary())
+```
+
+### E1. Report equation, R², and residual standard error
+
+Fill these in from your output:
+
+- Equation: **TODO**
+- \(R^2\): **TODO**
+
+Compute the residual standard error (RSE) explicitly:
+
+```{python}
+n = len(y)
+p = 1  # only new_stat is a predictor here
+rse = np.sqrt(model_new.ssr / (n - p - 1))
+rse
+```
+
+- Residual Standard Error (RSE): **TODO**
+
+---
+
+## Part F — Model Diagnostics (Suitability for Prediction)
+
+A model can have a high \(R^2\) and still be a poor predictive model if assumptions are badly violated.
+
+You must check:
+
+1. **Linearity** (and additivity)
+2. **Normally distributed residuals**
+3. **Homoscedasticity** (constant variance)
+4. **Problem points** (e.g. outliers))
+
+### F1. Linearity: scatterplot + fitted line
+
+```{python}
+plt.figure()
+plt.scatter(df["new_stat"], y)
+plt.xlabel("new_stat")
+plt.ylabel("Scoring")
+plt.title("Scoring vs new_stat")
+
+# fitted line
+b0, b1 = model_new.params["const"], model_new.params["new_stat"]
+xs = np.linspace(df["new_stat"].min(), df["new_stat"].max(), 200)
+plt.plot(xs, b0 + b1*xs)
+
+plt.show()
+```
+
+**Comment (2–4 sentences):** Is the relationship roughly linear?
+
+- **TODO:**
+
+### F2. Residual normality: histogram and QQ plot
+
+```{python}
+resid = model_new.resid
+
+plt.figure()
+plt.hist(resid, bins=20)
+plt.title("Histogram of residuals")
+plt.xlabel("Residual")
+plt.ylabel("Count")
+plt.show()
+
+sm.qqplot(resid, line="45")
+plt.title("QQ plot of residuals")
+plt.show()
+```
+
+**Comment (2–4 sentences):** Do residuals look approximately normal?
+
+- **TODO:**
+
+### F3. Homoscedasticity: residuals vs fitted plot
+
+```{python}
+fitted = model_new.fittedvalues
+
+plt.figure()
+plt.scatter(fitted, resid)
+plt.axhline(0)
+plt.title("Residuals vs fitted")
+plt.xlabel("Fitted values")
+plt.ylabel("Residuals")
+plt.show()
+```
+
+**Comment (2–4 sentences):** Is the spread of residuals roughly constant across fitted values?
+
+- **TODO:**
+
+
+**Comment (3–6 sentences):**
+- Are there a few observations dominating the fit?
+- If you remove the most influential point, do your conclusions change? (You can test this by refitting after dropping that row.)
+
+- **TODO:**
+
+### F5. Prediction suitability
+
+In **4–8 sentences**, give a final judgement:
+
+- Is your `new_stat` model suitable for prediction?
+- Which assumptions looked good, and which looked questionable?
+- If you wanted a better predictive model, what would you try next (e.g., transformations, different predictors, removing outliers, nonlinear terms)?
+
+- **TODO:**
+
+---
+
+## Submission Checklist
+
+Before you push to GitHub Classroom, make sure:
+
+- [ ] Your `.qmd` renders without errors.
+- [ ] Your scraped DataFrame has at least 1 scoring + 3 offensive stats.
+- [ ] You included the multiple regression summary and discussed significance.
+- [ ] You defined `new_stat` and reported the simple regression equation, \(R^2\), and RSE.
+- [ ] You included all diagnostic plots and wrote comments.
+
+---
+
+## Academic Integrity
+
+You may discuss ideas with classmates, but your **code and writing** must be your own. If you used AI or a classmate’s debugging tip, describe it and credit them in a short note.
+
