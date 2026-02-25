@@ -80,6 +80,18 @@ This approach reflects an important idea in simulation: if we can describe the m
 ## Simulating a Single Inning
 We consider a simplified game of baseball in which each at-bat has only two possible outcomes: a home run or a strikeout. This turns an inning into a sequence of repeated random trials that continues until three outs occur. Below is a flow chart for the logic of our simplified inning: 
 
+::: {style="max-width: 420px; margin: 0 auto;"}
+  ```{mermaid}
+  flowchart TD
+      A[Start inning] --> C{Fewer than 3 outs?}
+      C -- No --> H[End Inning]
+      C -- Yes --> D[Simulate At Bat]
+      D -- 1: Homerun --> F[Add 1 to runs]
+      D -- 0: Strikeout --> G[Add 1 to outs]
+      F --> C
+      G --> C
+  ```
+:::
 
 This is an example of a stochastic process with a stopping rule. The number of at-bats in an inning is not fixed — it depends on the random sequence of outcomes. Some innings end quickly with three straight outs, while others last longer because home runs delay the third out.
 
