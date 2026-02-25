@@ -132,34 +132,51 @@ while outs < 3: # inning ends when there are three outs
 ```
 
 ## Simulating Many Innings
+Simulating a single inning is not very informative because any one outcome is dominated by randomness. By simulating many innings, we can see the full distribution of possible run totals and get stable estimates of typical performance. 
+
+The number of simulations is a tradeoff: more simulations reduce Monte Carlo noise and make the results smoother, but they take longer to run and offer diminishing returns once the estimates have mostly stabilized.
+
 
 ```{python}
-# Set Simulation parameters
-N = 100000 # number of simulations
-p = 0.1    # prob of home run
-batter = np.array([0,1])
-pr = np.array([1-p, p])
-output = np.empty(N, dtype=int)
+# Set Simulation Parameters
+np.random.seed(321) # set seed
+num_sims = 1000   # number of simulations
 
-for i in range(N):
+# =====================
+# Simulate Many Innings
+# =====================
+inning_runs = np.empty(num_sims, dtype=int) 
+  # initialize empty vector
+for i in range(num_sims):
+
+    # Simulate Inning
     runs = 0
     outs = 0
     while outs < 3:
-        atbat = rng.choice(batter, p=pr)
-        if atbat == 1:
+        at_bat = np.random.binomial(n=1, p=p)
+        if at_bat == 1:
             runs += 1
         else:
             outs += 1
-    output[i] = runs
+    inning_runs[i] = runs
 
-output.mean()
+# average number of runs
+print(f"The average number of runs per inning is {inning_runs.mean()}.")
 ```
 
-There are nine innings in a game of baseball, so to find the average runs per game, we just need to get the average runs per inning and multiply it by 9. 
+### Plotting Simulations
+The average runs per inning is useful, but it hides a lot of variability. A histogram lets us see the full distribution of outcomes—how often we get scoreless innings, how common multi‑run innings are, and how heavy the tail is.
 
 ```{python}
-# Average runs per game:
-9 * output.mean()
+import matplotlib.pyplot as plt
+
+# Histogram of Runs Per Inning
+bins = np.arange(inning_runs.min(), inning_runs.max() + 2, 1)
+plt.hist(inning_runs, bins=bins, edgecolor="black", density=True)
+plt.title("Distribution of Runs Per Inning")
+plt.xlabel("Runs in Inning")
+plt.ylabel("Density")
+plt.show()
 ```
 
 ## Simulating a Game
