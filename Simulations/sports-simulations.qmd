@@ -15,25 +15,43 @@ Randomness is an intrinsic part of sports. Many specific events can be modeled l
 Simulations are one of the most versatile methods in the data science toolbox. They allow us to explore questions that are analytically difficult, quantify uncertainty, and experiment with “what-if” scenarios before they happen in the real world.They may be as simple or as complex as you would like. 
 
 **Why not regression?** Regression is a powerful tool for understanding relationships between variables and making predictions, but it relies on assumptions and analytic formulas. When systems become complex, writing down a clean regression model can be difficult or even impossible. Regression also typically answers questions about average relationships, while many real-world questions involve distributions, uncertainty, and rare events (for example, the chance a weaker team wins a game).
+
+
+## Simulation Basics
+
+This section is a mini-tutorial on the core functions used throughout the simulations below.
+
+### Core Random/Sampling Functions
+
+- `np.random.seed(seed)`: sets the random seed so your simulation results are reproducible.
+- `np.random.binomial(n, p, size)`: simulates binary outcomes. For a yes/no event (like home run vs out), use `n=1`.
+- `np.empty(N, dtype=int)`: pre-allocates an array to store simulation outputs efficiently.
+
+**Basic random number generation.** We use the `numpy` package to draw random numbers. Specifically, we use the `np.random.binomial` function to generate random binary values, taking values 0 or 1. 
+
 ```{python}
-#import random
-#random.randint(0, 1)
+import numpy as np
+
+# To make a sequence, use the `size` parameter
+np.random.binomial(n=1, p=0.5, size=5)
+  # 0: 50% 
+  # 1: 50% 
 ```
 
-**Runs**. Number of points scored — the number of times a player successfully travels around all four bases and touches home plate. In our simplified model, a home run immediately produces one run because the batter circles the bases without being put out.
+**Reproducible random number generation**. With a fixed seed, the same code produces the same simulated outcomes each time, so you can isolate the effect of code changes rather than randomness. Without a seed, outputs can vary from run to run, which makes it harder to tell whether differences are meaningful or just random noise.
 
-**Outs**. An unsuccessful plate appearance that moves the defensive team closer to ending the inning. Many events can produce an out in real baseball (strikeouts, flyouts, groundouts, etc.), but in our simulation we collapse all of these into a single outcome called an out.
+In the following example, we set an arbitrary seed and show we obtain the same sequence of random numbers each time. 
 
-- Three outs end an inning.  
-- When an inning ends, any runners left on base do not score.  
-- Each team gets one turn at bat per inning (a half-inning).  
+```{python}
+np.random.seed(123)  # set seed 
+draws_1 = np.random.binomial(n=1, p=0.5, size=5)
 
-## Baseball Simulation
-To keep the simulation focused on randomness rather than baseball rules, we will use a highly simplified version of the game:
+np.random.seed(123)  # set same seed again
+draws_2 = np.random.binomial(n=1, p=0.5, size=5)
 
-- Every at-bat has only two outcomes: home run or strikeout (out).  
-- A home run scores exactly one run.  
-- The inning continues until three outs occur.  
+# the random sequence is the same
+"Same result" if np.array_equal(draws_1, draws_2) else "Different Result"
+```
 
 This simplification lets us isolate the core idea of simulation: repeatedly sampling random outcomes according to specified probabilities and tracking the resulting totals.
 
