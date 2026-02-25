@@ -179,21 +179,30 @@ plt.ylabel("Density")
 plt.show()
 ```
 
+Now, it is easy for us to analyze our simulations. We see that  in over 70% of the simulations, the offensive team never scores a single run. 
+
+Similarly, we can **estimate the probability** of getting at least 1 run: 
+
+```{python}
+# Probability of scoring at least 1 run? 
+(inning_runs > 0).mean()
+```
+
+
+
 ## Simulating a Game
-Now imagine you had two teams - one hits a homerun with probability `p1 = 0.1` and the second with probability `p2 = 0`.12. If they played a game, we would expect the second team to win. But if they played 100 games against each other, would we expect the second team to win all 100 games? If not, how many would we expect them to win? We will answer this question by simulating 100 games of such teams. We start with simulating one game. To make this easier, I am going to create a function, called inning, that simulates a teams at bat (really it should be called half-inning)
+Now imagine you had two teams - one hits a homerun with probability `p1 = 0.1` and the second with probability `p2 = 0.12`. If they played a game, we would expect the second team to win. But if they played 100 games against each other, would we expect the second team to win all 100 games? If not, how many would we expect them to win? We will answer this question by simulating 100 games of such teams. We start with simulating one game. To make this easier, I am going to create a function, called inning, that simulates a teams at bat (really it should be called half-inning)
 
 Define an inning function.
 
 ```{python}
-def inning(p, rng):
+def inning(p):
     runs = 0
     outs = 0
-    batter = np.array([0,1])
-    pr = np.array([1-p, p])
 
     while outs < 3:
-        atbat = rng.choice(batter, p=pr)
-        if atbat == 1:
+        at_bat = np.random.binomial(n=1, p=p)
+        if at_bat == 1:
             runs += 1
         else:
             outs += 1
@@ -203,43 +212,66 @@ def inning(p, rng):
 Simulate one game.
 
 ```{python}
-p1 = 0.10
-p2 = 0.12
+p1 = 0.10 # Prob(Team 1 hits home run)
+p2 = 0.12 # Prob(Team 2 hits home run)
 
+# =============
+# Simulate Game
+# =============
 score1 = 0
 score2 = 0
-ginning = 1
+inning_num = 1
+while (inning_num <= 9) or (score1 == score2):
+    score1 += inning(p1)
+    score2 += inning(p2)
+    inning_num += 1
 
-while (ginning <= 9) or (score1 == score2):
-    score1 += inning(p1, rng)
-    score2 += inning(p2, rng)
-    ginning += 1
-
-score1, score2
+# Print Game Result
+print(f"Team 1 Score: {score1}")
+print(f"Team 2 Score: {score2}")
+if score1 > score2: 
+  print("Team 1 Wins!") 
+elif score1 < score2: 
+  print("Team 2 Wins!") 
+else: 
+  print("TIE") 
 ```
 
 ## Simulating Many Games
 
 ```{python}
-games = 100
-series = np.empty(games, dtype=int)
+num_sims = 1000 # number of simulations
+p1 = 0.10 # Prob(Team 1 hits home run)
+p2 = 0.12 # Prob(Team 2 hits home run)
 
-p1 = 0.10
-p2 = 0.12
+# initialize vectors to save results
+score1_sim = np.empty(num_sims, dtype=int)
+score2_sim = np.empty(num_sims, dtype=int)
 
-for i in range(games):
+# Run Simulations
+for i in range(num_sims):
+
+    # Simulate Game
     score1 = 0
     score2 = 0
-    ginning = 1
+    inning_num = 1
+    while (inning_num <= 9) or (score1 == score2):
 
-    while (ginning <= 9) or (score1 == score2):
-        score1 += inning(p1, rng)
-        score2 += inning(p2, rng)
-        ginning += 1
+        # Simulate Inning
+        score1 += inning(p1)
+        score2 += inning(p2)
+        inning_num += 1
 
-    series[i] = 1 if score2 > score1 else 0
+    # Save Results
+    score1_sim[i] = score1
+    score2_sim[i] = score2
 
-series.mean()
+# Output Results
+team2_wins = (
+  (score1_sim < score2_sim) &  # team 2 beats team 1
+  (score1_sim != score2_sim)   # excluding ties
+)
+print(f"Team 2 beats Team 1 in {round(team2_wins.mean() * 100, 2)}% of the simulations.")
 ```
 
 ## Group Activity
