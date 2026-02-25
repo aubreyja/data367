@@ -93,30 +93,23 @@ We consider a simplified game of baseball in which each at-bat has only two poss
   ```
 :::
 
-This is an example of a stochastic process with a stopping rule. The number of at-bats in an inning is not fixed — it depends on the random sequence of outcomes. Some innings end quickly with three straight outs, while others last longer because home runs delay the third out.
 
-In code, we implement this using:
-- a random draw to represent each at-bat  
-- variables to track runs and outs  
-- a while loop that continues until the stopping condition (three outs) is reached  
+### At-Bat Simulation
+In our simplified setting, a batter is up to bat, and they either strike out, or hit a home run. We use the `np.random.binomial` function to simulate the random outcome: 
 
-The key modeling idea is that we do not predetermine how many at-bats occur. Instead, the structure of the loop allows randomness to determine the length of the inning, which mirrors how real processes unfold.
-
-Once we can simulate a single inning, we can repeat the same procedure many times to estimate quantities such as the average runs per inning or the probability of scoring at least one run.
+This section models a single plate appearance as a simple random trial. We collapse all outcomes into either a home run (run scored) or a strikeout (out recorded), which keeps the logic clear while still capturing the core randomness of hitting.
 
 ```{python}
-import numpy as np
-rng = np.random.default_rng(123) # set seed
+# =================
+# Simulate "At Bat"
+# =================
 
-# 0 = strikeout, 1 = homerun
-batter = np.array([0,1])
-pr = np.array([0.9,0.1])
-
-#rng.choice([0, 1], p=[0.9, 0.1])
-rng.choice(batter, p=pr)
+# 0 = strikeout, 1 = homerun with probability p = 0.1
+p = 0.1 # prob of home run
+at_bat = np.random.binomial(n=1, p=p)
+print("HOMERUN" if at_bat == 1 else "STRIKEOUT")
 ```
 
-We track runs and outs using a while loop.
 
 ```{python}
 p = 0.1 # prob of home run 
