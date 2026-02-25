@@ -111,21 +111,24 @@ print("HOMERUN" if at_bat == 1 else "STRIKEOUT")
 ```
 
 
-```{python}
-p = 0.1 # prob of home run 
-batter = np.array([0,1])
-pr = np.array([1-p, p])
+### Simulating Inning
+Now we extend the at‑bat model across a full inning. We repeatedly simulate plate appearances and update runs and outs until three outs are recorded, which mirrors how innings actually end in baseball. This sets up a clean, loop‑based framework that we can later enrich with more realistic outcomes.
 
+```{python}
+# ===============
+# Simulate Inning
+# ===============
+np.random.seed(321) # set seed
 runs = 0
 outs = 0
 while outs < 3: # inning ends when there are three outs
-    atbat = rng.choice(batter, p=pr)
-    if atbat == 1:
+    at_bat = np.random.binomial(n=1, p=p)
+    if at_bat == 1: # home run
         runs += 1
-    else:
+        print(f"HOMERUN   (Runs: {runs})")
+    else: # strike out
         outs += 1
-runs
-
+        print(f"STRIKEOUT (Outs: {outs}/3)")
 ```
 
 ## Simulating Many Innings
