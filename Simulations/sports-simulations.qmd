@@ -274,70 +274,90 @@ team2_wins = (
 print(f"Team 2 beats Team 1 in {round(team2_wins.mean() * 100, 2)}% of the simulations.")
 ```
 
-## Group Activity
-
-### Group Activity - Football Simulation
-Imagine a football team that gains 5 yards with probability 0.25, 4 yards with probability 0.35, 0 yards with probability 0.3, and -2 yards with probability 0.1. What is the probability they get a first down within 4 plays? Write and run a simulation to answer this question.
+We plot the simulated scores as overlapping histograms to compare the two teams directly. This makes it easy to see both the typical score for each team and the amount of overlap between their score distributions. In our simulation, Team 2 scores more on average, but that does not guarantee a win in any single game—Team 1 can still have an unusually strong performance and outscore Team 2 in a given simulation.
 
 ```{python}
-# Football: estimate P(first down in 4 plays)
-N = 2000
-yards = np.array([5, 4, 0, -2])
-probs = np.array([0.25, 0.35, 0.30, 0.10])
+bins = np.arange(
+    min(score1_sim.min(), score2_sim.min()),
+    max(score1_sim.max(), score2_sim.max()) + 2,
+    1
+)
 
-first_downs = 0
-for _ in range(N):
-    total_yards = 0
-    for _ in range(4):
-        total_yards += rng.choice(yards, p=probs)
-        if total_yards >= 10:
-            first_downs += 1
-            break
-
-first_down_prob = first_downs / N
-first_down_prob
+plt.hist(score1_sim, bins=bins, color="blue", alpha=0.5,
+edgecolor="black", label="Team 1", density=True)
+plt.hist(score2_sim, bins=bins, color="red", alpha=0.5,
+edgecolor="black", label="Team 2", density=True)
+plt.xlabel("Score")
+plt.ylabel("Density")
+plt.title("Team Score Distributions")
+plt.legend()
+plt.show()
 ```
 
-### Group Activity - Basketball Simulation
+## More Simulation Functions
+I've added some additional simulation functions for your reference. If you have taken probability theory, you are probably familiar with these distributions. If you have not taken probability theory, do not worry. 
+
+```python
+# discrete outcomes
+np.random.choice(["A", "B", "C"], p=[0.2, 0.5, 0.3], size=1)
+
+# binary outcomes
+np.random.binomial(n=10, p=0.7, size=1) 
+
+# categorical outcomes
+np.random.multinomial(n=1, pvals=[0.5, 0.3, 0.2], size=1) 
+
+# uniformly random number between 0 and 1
+np.random.uniform(0, 1, size=1) 
+
+# continuous random numbers centered around some value
+np.random.normal(loc=0, scale=1, size=1)
+  # loc: mean 
+  # scale: variance 
+
+# number of events in a fixed unit of time
+np.random.poisson(lam=2.3, size=1)
+  # lam: average number of events
+
+# number of discrete events until success
+np.random.geometric(p=0.3, size=1) 
+
+# continuous time until success
+np.random.exponential(scale=2.0, size=100)
+  # scale: average time between events
+```
+
+## Conclusion
+
+- Simulations provide a practical way to analyze complex processes that are hard to solve analytically.  
+- They are flexible: we can change assumptions, run many scenarios, and explore outcomes quickly.  
+- The results can be interpreted probabilistically, helping us estimate probabilities and distributions rather than single outcomes.  
+- Advice: these complex processes can often be broken down into simpler parts. When designing a simulation, work your way up from the simplest components to more sophisticated ones. 
+
+
+# Group Activity
+
+### Football Simulation
+A football team achieves first down if they gain 10 yards.  Consider a football team that gains  
+
+- 5 yards with probability 0.25,   
+- 4 yards with probability 0.35,   
+- 0 yards with probability 0.3, and   
+- -2 yards with probability 0.1.  
+
+What is the probability they get a first down within 4 plays? Write and run a simulation to answer this question. 
+
+Hint: useful functions might include `np.random.choice` or `np.random.multinomial`.  
+
+
+### Basketball Simulation
 Imagine a team that has a shooting percentage of 52% for 2-point field goals, and 36% for 3-point field goals. They shoot 3-point field goals on 33% of their possessions, and 2-point field goals on 67% of their possessions.
 
-Now imagine a second team that has the exact same shooting percentage for both 2-point and 3-point field goals, but they shoot 3-point field goals on 43% of their possessions, and 2-point field goals on 57% of their possessions.
+Now imagine a second team that has the exact same shooting percentage for both 2-point and 3-point field goals, but they shoot 3-point field goals on 43% of their possessions, and 2-point field goals on 57% of their possessions. 
+
+In other words, the two teams are equally skilled but strategies differ: one team shoots more 3-pointers than the other. 
 
 If these two teams play, what is the probability that the second team wins? Assume that each team gets 100 possessions per game. For simplicity, we will allow for ties. Does this change if we assume that each team gets 110 possessions per game? If so, by how much? Write and run a simulation that estimates these probabilities.
 
-```{python}
-def simulate_points(possessions, p_three, p_make_2=0.52, p_make_3=0.36, rng=None):
-    points = 0
-    for _ in range(possessions):
-        is_three = rng.random() < p_three
-        if is_three:
-            points += 3 if rng.random() < p_make_3 else 0
-        else:
-            points += 2 if rng.random() < p_make_2 else 0
-    return points
+--- 
 
-def estimate_team2_results(possessions, sims=2000, rng=None):
-    team2_wins = 0
-    ties = 0
-
-    for _ in range(sims):
-        team1 = simulate_points(possessions, p_three=0.33, rng=rng)
-        team2 = simulate_points(possessions, p_three=0.43, rng=rng)
-
-        if team2 > team1:
-            team2_wins += 1
-        elif team2 == team1:
-            ties += 1
-
-    return {
-        "possessions": possessions,
-        "team2_win_probability": team2_wins / sims,
-        "tie_probability": ties / sims,
-        "team2_not_lose_probability": (team2_wins + ties) / sims
-    }
-
-results_100 = estimate_team2_results(100, sims=2000, rng=rng)
-results_110 = estimate_team2_results(110, sims=2000, rng=rng)
-
-results_100, results_110
-```
