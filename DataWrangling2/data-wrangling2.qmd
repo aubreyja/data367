@@ -1,0 +1,33 @@
+---
+title: "Data Wrangling 2"
+author: Jeff Mei, Jason Aubrey
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+**Reference**: [Pandas Cheatsheet](https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf)
+
+Our goal is practice dataframe manipulation commands in Python and webscraping
+and to develop a method to rank teams (or players) in sports.
+
+## Instructions
+
+* This is a group assignment. Each group should have 2-4 members. Each group should submit one QMD file to Github Classroom. 
+
+* Choose a sport with data on the web (E.g. from (https://stats.ncaa.org)) and create a metric from data available to rank teams or players in the sport you choose. Your ranking should have at least three input variables. It may take some brainstorming and research to create a suitable metric. Make sure you give the formula for your metric in the text of the QMD file your group submits.
+
+* Scrape the data you need from the given website. Make sure the QMD file your
+group submits includes all the code necessary to get the data, clean up
+the data, and put the data in a Pandas dataframe in Python.
+
+
+* Create a final dataframe that only contains: the name of each team or player, their
+metric value, and their rank.
+
+* Each group submits one QMD file to the appropriate Gradescope assignment.
+It is due at the end of class.
+
+
+
