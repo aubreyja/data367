@@ -1,0 +1,55 @@
+---
+title: "Python Assignment 4"
+format: html
+---
+
+This is a continuation of the Dataframes Day 2 activity. You may work in the same groups or different groups as you did for the Day 2 activity. The goal of this assignment is to create a new metric for ranking teams in a sport of your choice, and then use that metric to determine which teams would be invited to a postseason tournament.
+
+- In the **QMD file** your group submits, be sure it includes all the code necessary to **scrape the data from the web**, clean up the data, and put the data in a DataFrame in Python for sport your group chooses.
+  - You must use **web scraping** (e.g., `requests` + `BeautifulSoup`, `selenium`, or `pandas.read_html`) to retrieve your data — no manually downloaded CSV files.
+  - You may use any publicly available sports data website (see suggestions below).
+
+- In the QMD file your group submits, be sure it includes the **formula for the metric** your group created above. 
+
+- **Twenty percent** of the teams in your sport will be invited to a postseason tournament. You will use the metric you created to decide who those teams are, subject to the following rules:
+  - Every conference must have **at least one team** represent their conference in the tournament.
+  - No conference can have **half (or more)** of their teams in the tournament.
+
+- Create a new DataFrame called `PostSeason` that includes only the teams invited to the tournament, their conference affiliation, and their metric value.
+
+- The git history of your QMD file should show contributions from all group members. You can use `git blame` to check this on the final QMD file. This means that you should divide up the work, and make sure that each group member is responsible for writing code in the QMD file and committing that code to GitHub.
+
+
+## Suggested Websites for Sports Data
+
+Here are some websites you can scrape for sports statistics (NCAA and beyond):
+
+| Website | URL | Sports Covered | Notes |
+|---|---|---|---|
+| **Sports Reference** | `https://www.sports-reference.com` | NCAA basketball, football, baseball, hockey, and all major pro leagues | Hub for many sub-sites below. |
+| **Basketball Reference** | `https://www.basketball-reference.com` | NBA, WNBA | Detailed player/team stats, standings, advanced metrics. |
+| **College Basketball Reference** | `https://www.sports-reference.com/cbb` | NCAA Men's Basketball | Conference standings, team stats, advanced metrics. |
+| **Baseball Reference** | `https://www.baseball-reference.com` | MLB | Comprehensive batting, pitching, fielding stats. |
+| **Pro Football Reference** | `https://www.pro-football-reference.com` | NFL | Team and player stats, standings, advanced metrics. |
+| **College Football Reference** | `https://www.sports-reference.com/cfb` | NCAA Football | Team stats, standings, recruiting data. |
+| **Hockey Reference** | `https://www.hockey-reference.com` | NHL | Skater/goalie stats, standings, advanced metrics. |
+| **FBref** | `https://fbref.com` | Soccer (global) | Extensive stats for Premier League, La Liga, MLS, Champions League, and more. |
+| **ESPN Stats** | `https://www.espn.com/sports` | Nearly all sports | Standings and stats pages for NFL, NBA, MLB, NHL, college sports, soccer, and more. |
+| **NCAA Stats** | `https://stats.ncaa.org` | All NCAA sports | Official NCAA stats across all divisions and sports. |
+| **CollegeFootballData.com** | `https://collegefootballdata.com` | NCAA Football | Free REST API with scrapable JSON; no `BeautifulSoup` needed. |
+| **Transfermarkt** | `https://www.transfermarkt.us` | Soccer (global) | Player valuations, team rosters, league standings. |
+| **WarrenNolan.com** | `https://www.warrennolan.com` | NCAA Basketball, Baseball | RPI, NET rankings, strength of schedule. |
+| **HerHoopStats.com** | `https://herhoopstats.com` | NCAA Women's Basketball | Advanced stats and rankings. |
+| **Ultimate Tennis Statistics** | `https://www.ultimatetennisstatistics.com` | ATP Tennis | Match results, rankings, head-to-head records. |
+
+::: {.callout-tip}
+In addition to other tools we've explored, `pandas.read_html(url)` offers another way to pull tables from webpages. For sites that load data dynamically, you migt also try `selenium` or `playwright`.
+:::
+
+---
+
+## Submission
+
+When your group is finished, commit a final version of the group's Quarto notebook (**QMD file**) to the **Python 4** assignment in GitHub Classroom.
+
+**Due: Wednesday, March 4th, at 11:59pm**
