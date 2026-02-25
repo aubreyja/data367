@@ -3,7 +3,7 @@ title: "Python Assignment 4"
 format: html
 ---
 
-This is a continuation of the Dataframes Day 2 activity. You may work in the same groups or different groups as you did for the Day 2 activity. The goal of this assignment is to create a new metric for ranking teams in a sport of your choice, and then use that metric to determine which teams would be invited to a postseason tournament.
+This is a continuation of the Dataframes Day 2 activity. You may work in the same groups or different groups as you did for the Day 2 activity. Your group must have 2-4 people in it. The goal of this assignment is to create a new metric for ranking teams in a sport of your choice, and then use that metric to determine which teams would be invited to a postseason tournament.
 
 - In the **QMD file** your group submits, be sure it includes all the code necessary to **scrape the data from the web**, clean up the data, and put the data in a DataFrame in Python for sport your group chooses.
   - You must use **web scraping** (e.g., `requests` + `BeautifulSoup`, `selenium`, or `pandas.read_html`) to retrieve your data — no manually downloaded CSV files.
