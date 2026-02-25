@@ -7,14 +7,14 @@ format:
 fontsize: 11pt
 ---
 
-## Motivation
-**Why not regression?** Regression is a powerful tool for understanding relationships between variables and making predictions, but it relies on assumptions and analytic formulas. When systems become complex — involving randomness, feedback, or rules that change over time — writing down a clean regression model can be difficult or even impossible. Regression also typically answers questions about average relationships, while many real-world questions involve distributions, uncertainty, and rare events (for example, the chance a weaker team wins a game).
+## Introduction
+Randomness is an intrinsic part of sports. Many specific events can be modeled like coin-flips: a basketball free throw is made about 75% of the time, and a baseball hitter gets a hit roughly 25% of the time. But sports aren't exciting because we like watching coin flips. They're exciting because those probabilities unfold within a sophisticated game of strategy and skill.
 
 **Simulating Strategies.** Simulation allows us to encode rules directly and let the computer generate outcomes repeatedly. Instead of solving equations, we ask: what happens if we play the game thousands of times? This makes simulation especially useful for evaluating strategies, comparing scenarios, and understanding variability. For example, we can test whether a slightly better home-run rate meaningfully improves a team’s chance of winning a series.
 
-Simulations are one of the most versatile methods in the data science toolbox. They allow us to explore questions that are analytically difficult, quantify uncertainty, and experiment with “what-if” scenarios before they happen in the real world.
+Simulations are one of the most versatile methods in the data science toolbox. They allow us to explore questions that are analytically difficult, quantify uncertainty, and experiment with “what-if” scenarios before they happen in the real world.They may be as simple or as complex as you would like. 
 
-## Baseball Basics
+**Why not regression?** Regression is a powerful tool for understanding relationships between variables and making predictions, but it relies on assumptions and analytic formulas. When systems become complex, writing down a clean regression model can be difficult or even impossible. Regression also typically answers questions about average relationships, while many real-world questions involve distributions, uncertainty, and rare events (for example, the chance a weaker team wins a game).
 ```{python}
 #import random
 #random.randint(0, 1)
