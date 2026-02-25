@@ -357,7 +357,7 @@ Now imagine a second team that has the exact same shooting percentage for both 2
 
 In other words, the two teams are equally skilled but strategies differ: one team shoots more 3-pointers than the other. 
 
-If these two teams play, what is the probability that the second team wins? Assume that each team gets 100 possessions per game. For simplicity, we will allow for ties. Does this change if we assume that each team gets 110 possessions per game? If so, by how much? Write and run a simulation that estimates these probabilities.
+If these two teams play, what is the probability that the second team wins? Assume that each team gets 100 possessions per game. We will allow for ties. Does this change if we assume that each team gets 110 possessions per game? If so, by how much? Write and run a simulation that estimates these probabilities.
 
 --- 
 
