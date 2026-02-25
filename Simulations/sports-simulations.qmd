@@ -53,19 +53,22 @@ draws_2 = np.random.binomial(n=1, p=0.5, size=5)
 "Same result" if np.array_equal(draws_1, draws_2) else "Different Result"
 ```
 
+--- 
+
+## Baseball Simulation
+
+### Overview
+
+We will use a highly simplified version of baseball:
+
+- Every at-bat has only two outcomes: home run or strikeout.  
+- A home run scores exactly one run.  
+- An inning continues until three outs occur.  
+
 This simplification lets us isolate the core idea of simulation: repeatedly sampling random outcomes according to specified probabilities and tracking the resulting totals.
 
-A baseball game naturally lends itself to simulation because it unfolds as a sequence of random events. Each at-bat has an uncertain outcome, innings end after a rule-based stopping condition (three outs), and the final score is the accumulation of many small random results.
+Rather than solving for the expected number of runs using probability formulas, we can mimic the game directly. The computer repeatedly “plays” innings by randomly generating at-bat outcomes according to a specified probability of a home run. By repeating this process many times, we approximate quantities such as:  
 
-In a simulation, we translate these elements into code:
-
-States we track (runs, outs, inning number, score)
-
-Random events (the result of an at-bat)
-
-Rules that determine when something stops (three outs ends a half-inning, nine innings end a regulation game unless tied)
-
-Rather than solving for the expected number of runs using probability formulas, we can mimic the game directly. The computer repeatedly “plays” innings by randomly generating at-bat outcomes according to a specified probability of a home run. By repeating this process many times, we approximate quantities such as:
 - expected runs per inning  
 - expected runs per game  
 - probability one team beats another  
@@ -73,28 +76,10 @@ Rather than solving for the expected number of runs using probability formulas, 
 
 This approach reflects an important idea in simulation: if we can describe the mechanism that generates outcomes, we can estimate almost any quantity of interest by repeated sampling.
 
-## Simulation Basics
-
---- 
-
-## Purpose
-Imagine every hitter in a game either hits a homerun (with probability $p=0.1$) or strikes out (with probability $1-p=0.9$).  
-How many runs do we expect the team to score in a nine inning game?
-
-- Sports Analytics: Estimate the impact of a strategy  
-- Statistics: Estimating quantities using simulation  
-- Python: Simulating in Python  
-
----
 
 ## Simulating a Single Inning
-We consider a simplified game of baseball in which each at-bat has only two possible outcomes: a home run or a strikeout. This turns an inning into a sequence of repeated random trials that continues until three outs occur.
+We consider a simplified game of baseball in which each at-bat has only two possible outcomes: a home run or a strikeout. This turns an inning into a sequence of repeated random trials that continues until three outs occur. Below is a flow chart for the logic of our simplified inning: 
 
-Conceptually, one inning follows this loop:
-- Generate an at-bat outcome according to a fixed probability $p$ of a home run.  
-- If the batter hits a home run, add one run.  
-- If the batter makes an out, increment the out count.  
-- Stop once three outs are recorded.  
 
 This is an example of a stochastic process with a stopping rule. The number of at-bats in an inning is not fixed — it depends on the random sequence of outcomes. Some innings end quickly with three straight outs, while others last longer because home runs delay the third out.
 
