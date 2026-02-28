@@ -1,0 +1,210 @@
+---
+title: "Bootstrapping"
+author: Jeff Mei
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+
+**Purpose:** In this activity, we explore the probability of a football team getting a first down on a given series. We will use data from the 2018 New England Patriots.
+
+- **Sports Analytics:** Look into a fundamental football question - what is the probability of getting a first down?
+- **Statistics:** Bootstrapping simulation.
+- **Python:** Bootstrapping in Python.
+
+---
+
+## Preparing the Data
+
+We begin by loading the data. The data was downloaded from [Pro Football Reference](www.pro-football-reference.com). Each week of data contains the offensive plays from the Patriots for the given week. We modified the data to remove turnovers, kneel-downs, penalties, and special team plays.
+
+```{python}
+import pandas as pd
+import numpy as np
+import random
+
+week1  = pd.read_csv("data/W1NEvsTexansWO.csv")
+week2  = pd.read_csv("data/W2NEvsJagsWO.csv")
+week3  = pd.read_csv("data/W3NEvsLionsWO.csv")
+week4  = pd.read_csv("data/W4NEvsDolphinsWO.csv")
+week5  = pd.read_csv("data/W5NEvsColtsWO.csv")
+week6  = pd.read_csv("data/W6NEvsChiefsWO.csv")
+week7  = pd.read_csv("data/W7NEvsBearsWO.csv")
+week8  = pd.read_csv("data/W8NEvsBillsWO.csv")
+week9  = pd.read_csv("data/W9NEvsPackersWO.csv")
+week10 = pd.read_csv("data/W10NEvsTitansWO.csv")
+week11 = pd.read_csv("data/W11NEvsJetsWO.csv")
+week12 = pd.read_csv("data/W12NEvsVikingsWO.csv")
+week13 = pd.read_csv("data/W13NEvsDolphinsWO.csv")
+week14 = pd.read_csv("data/W14NEvsSteelersWO.csv")
+week15 = pd.read_csv("data/W15NEvsBillsWO.csv")
+week16 = pd.read_csv("data/W16NEvsJetsWO.csv")
+```
+
+We now combine each week's data into a dataframe named `season`.
+
+```{python}
+season = pd.concat([week1, week2, week3, week4, week5, week6, week7, week8,
+                    week9, week10, week11, week12, week13, week14, week15, week16],
+                   ignore_index=True)
+season.describe()
+```
+
+We divide the plays into first-down plays, second-down plays, third-down plays, and fourth-down plays.
+
+```{python}
+FrstDwnPlys = season[season["Down"] == 1].reset_index(drop=True)
+FrstDwnPlys.describe()
+```
+
+```{python}
+ScdDwnPlys = season[season["Down"] == 2].reset_index(drop=True)
+ScdDwnPlys.describe()
+```
+
+```{python}
+ThdDwnPlys = season[season["Down"] == 3].reset_index(drop=True)
+ThdDwnPlys.describe()
+```
+
+```{python}
+FthDwnPlys = season[season["Down"] == 4].reset_index(drop=True)
+FthDwnPlys.describe()
+```
+
+---
+
+## Creating the Simulation
+
+In this simulation, we will sample a play from the first down plays, then a play from the second down plays (if needed), then a play from the third down plays (if needed) to see if we can get a first down. We will not consider penalties, nor will we go for it on fourth down.
+
+```{python}
+# keep track of downs - must be reset each time we run a series
+down = 1
+# keep track of yards to go - must be reset each time we run a series
+ydstogo = 10
+# keep track if we get a first down - must be reset each time we run a series
+success = 0
+
+# Begin the series - sample from a first down play
+fd = random.randint(0, len(FrstDwnPlys) - 1)
+# determine how many yards were gained on this first down play
+gain = FrstDwnPlys.loc[fd, "Gained"]
+# print the results
+print(f"Gained {gain} on 1st down")
+# update how many yards to go
+ydstogo = ydstogo - gain
+# update the down
+down = down + 1
+
+# if statement that checks if we made a first down
+if ydstogo <= 0:
+    print("Made it!")
+    success = 1
+else:
+    # Continue Series - sample from a second down play
+    sd = random.randint(0, len(ScdDwnPlys) - 1)
+    gain = ScdDwnPlys.loc[sd, "Gained"]
+    print(f"Gained {gain} on 2nd down")
+    ydstogo = ydstogo - gain
+    down = down + 1
+
+    if ydstogo <= 0:
+        print("Made it!")
+        success = 1
+    else:
+        # Continue Series - sample from a third down play
+        td = random.randint(0, len(ThdDwnPlys) - 1)
+        gain = ThdDwnPlys.loc[td, "Gained"]
+        print(f"Gained {gain} on 3rd down")
+        ydstogo = ydstogo - gain
+        down = down + 1
+
+        if ydstogo <= 0:
+            print("Made it!")
+            success = 1
+        else:
+            print("Didn't make it...")
+
+print(success)
+```
+
+Now we wrap this in a `for` loop, so we can run many series. Note that once we have it running - we comment out the print statements.
+
+```{python}
+# Series is the number of series we will run
+Series = 10000
+# list to keep track of successes
+result = [-1] * Series
+
+for i in range(Series):
+    down = 1
+    ydstogo = 10
+    success = 0
+
+    # Begin the series - sample from a first down play
+    fd = random.randint(0, len(FrstDwnPlys) - 1)
+    gain = FrstDwnPlys.loc[fd, "Gained"]
+    ydstogo = ydstogo - gain
+    down = down + 1
+
+    if ydstogo <= 0:
+        success = 1
+    else:
+        sd = random.randint(0, len(ScdDwnPlys) - 1)
+        gain = ScdDwnPlys.loc[sd, "Gained"]
+        ydstogo = ydstogo - gain
+        down = down + 1
+
+        if ydstogo <= 0:
+            success = 1
+        else:
+            td = random.randint(0, len(ThdDwnPlys) - 1)
+            gain = ThdDwnPlys.loc[td, "Gained"]
+            ydstogo = ydstogo - gain
+            down = down + 1
+
+            if ydstogo <= 0:
+                success = 1
+            else:
+                success = 0
+
+    result[i] = success
+
+# computes the mean of the result list
+np.mean(result)
+```
+
+---
+
+## Group Activities
+
+### Passing on First Down
+
+What if we modified our simulation so that we only passed the ball on first down? Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays when we pass on first down.
+
+```{python}
+
+```
+
+---
+
+### Running on First Down
+
+What if we modified our simulation so that we only ran the ball on first down? Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays when we run on first down.
+
+```{python}
+
+```
+
+---
+
+### Adjusting 2nd and 3rd Down Based on Yards to Go
+
+Adjust the model to select only plays with (about) the same yards to go. For example, if it is 2nd down with 6 yards to go, randomly select a play (either running or passing) from the season that was 2nd down and between 5 and 7 yards to go. Do the same for 3rd down. Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays.
+
+```{python}
+
+```
