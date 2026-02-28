@@ -100,99 +100,62 @@ flowchart TD
 :::
 
 ```{python}
-# keep track of downs - must be reset each time we run a series
+np.random.seed(321)
 down = 1
-# keep track of yards to go - must be reset each time we run a series
-ydstogo = 10
-# keep track if we get a first down - must be reset each time we run a series
-success = 0
+yards_to_go = 10
+yards_gained = 0
 
-# Begin the series - sample from a first down play
-fd = random.randint(0, len(FrstDwnPlys) - 1)
-# determine how many yards were gained on this first down play
-gain = FrstDwnPlys.loc[fd, "Gained"]
-# print the results
-print(f"Gained {gain} on 1st down")
-# update how many yards to go
-ydstogo = ydstogo - gain
-# update the down
-down = down + 1
+while down < 4 and yards_gained < 10: 
 
-# if statement that checks if we made a first down
-if ydstogo <= 0:
-    print("Made it!")
-    success = 1
-else:
-    # Continue Series - sample from a second down play
-    sd = random.randint(0, len(ScdDwnPlys) - 1)
-    gain = ScdDwnPlys.loc[sd, "Gained"]
-    print(f"Gained {gain} on 2nd down")
-    ydstogo = ydstogo - gain
-    down = down + 1
+  # Sample Yards Gained
+  yards_gained += (            
+      plays[plays["Down"] == down]  # filter by current down
+      .sample()["Gained"]           # randomly select a play
+      .iloc[0]                      # extract scalar value
+  )
+  print(f"Total Yards Gained: {yards_gained}")
 
-    if ydstogo <= 0:
-        print("Made it!")
-        success = 1
-    else:
-        # Continue Series - sample from a third down play
-        td = random.randint(0, len(ThdDwnPlys) - 1)
-        gain = ThdDwnPlys.loc[td, "Gained"]
-        print(f"Gained {gain} on 3rd down")
-        ydstogo = ydstogo - gain
-        down = down + 1
+  # Check if First Down Reached
+  if yards_gained > 10: 
+    print("FIRST DOWN")
+    break 
+  else: 
+    down += 1 
+    print(f"Down: {down}")
+```
 
-        if ydstogo <= 0:
-            print("Made it!")
-            success = 1
-        else:
-            print("Didn't make it...")
+```{python}
+def simulate_possession(plays): 
+  down = 1
+  yards_to_go = 10
+  yards_gained = 0
 
-print(success)
+  while down < 4 and yards_gained < 10: 
+
+    # Sample Yards Gained
+    yards_gained += (            
+        plays[plays["Down"] == down]  # filter by current down
+        .sample()["Gained"]           # randomly select a play
+        .iloc[0]                      # extract scalar value
+    )
+
+    # Check if First Down Reached
+    if yards_gained > 10: 
+      break 
+    else: 
+      down += 1 
+
+  if yards_gained > 10: 
+    return True  # first down reached
+  else: 
+    return False # first down not reached
 ```
 
 Now we wrap this in a `for` loop, so we can run many series. Note that once we have it running - we comment out the print statements.
 
 ```{python}
-# Series is the number of series we will run
-Series = 10000
-# list to keep track of successes
-result = [-1] * Series
-
-for i in range(Series):
-    down = 1
-    ydstogo = 10
-    success = 0
-
-    # Begin the series - sample from a first down play
-    fd = random.randint(0, len(FrstDwnPlys) - 1)
-    gain = FrstDwnPlys.loc[fd, "Gained"]
-    ydstogo = ydstogo - gain
-    down = down + 1
-
-    if ydstogo <= 0:
-        success = 1
-    else:
-        sd = random.randint(0, len(ScdDwnPlys) - 1)
-        gain = ScdDwnPlys.loc[sd, "Gained"]
-        ydstogo = ydstogo - gain
-        down = down + 1
-
-        if ydstogo <= 0:
-            success = 1
-        else:
-            td = random.randint(0, len(ThdDwnPlys) - 1)
-            gain = ThdDwnPlys.loc[td, "Gained"]
-            ydstogo = ydstogo - gain
-            down = down + 1
-
-            if ydstogo <= 0:
-                success = 1
-            else:
-                success = 0
-
-    result[i] = success
-
-# computes the mean of the result list
+num_sims = 10000
+result = [simulate_possession(plays) for i in range(num_sims)]
 np.mean(result)
 ```
 
@@ -203,10 +166,6 @@ np.mean(result)
 ### Passing on First Down
 
 What if we modified our simulation so that we only passed the ball on first down? Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays when we pass on first down.
-
-```{python}
-
-```
 
 ---
 
