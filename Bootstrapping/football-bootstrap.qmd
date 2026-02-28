@@ -46,31 +46,31 @@ week16 = pd.read_csv("data/W16NEvsJetsWO.csv")
 We now combine each week's data into a dataframe named `season`.
 
 ```{python}
-season = pd.concat([week1, week2, week3, week4, week5, week6, week7, week8,
-                    week9, week10, week11, week12, week13, week14, week15, week16],
+plays = pd.concat([week1, week2, week3, week4, week5, week6, week7, week8,
+                  week9, week10, week11, week12, week13, week14, week15, week16],
                    ignore_index=True)
-season.describe()
+plays.describe()
 ```
 
 We divide the plays into first-down plays, second-down plays, third-down plays, and fourth-down plays.
 
 ```{python}
-FrstDwnPlys = season[season["Down"] == 1].reset_index(drop=True)
+FrstDwnPlys = plays[plays["Down"] == 1].reset_index(drop=True)
 FrstDwnPlys.describe()
 ```
 
 ```{python}
-ScdDwnPlys = season[season["Down"] == 2].reset_index(drop=True)
+ScdDwnPlys = plays[plays["Down"] == 2].reset_index(drop=True)
 ScdDwnPlys.describe()
 ```
 
 ```{python}
-ThdDwnPlys = season[season["Down"] == 3].reset_index(drop=True)
+ThdDwnPlys = plays[plays["Down"] == 3].reset_index(drop=True)
 ThdDwnPlys.describe()
 ```
 
 ```{python}
-FthDwnPlys = season[season["Down"] == 4].reset_index(drop=True)
+FthDwnPlys = plays[plays["Down"] == 4].reset_index(drop=True)
 FthDwnPlys.describe()
 ```
 
