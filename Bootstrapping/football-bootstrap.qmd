@@ -7,6 +7,8 @@ format:
 fontsize: 11pt
 ---
 
+## Introduction to Bootstrapping
+
 
 **Purpose:** In this activity, we explore the probability of a football team getting a first down on a given series. We will use data from the 2018 New England Patriots.
 
@@ -79,6 +81,23 @@ FthDwnPlys.describe()
 ## Creating the Simulation
 
 In this simulation, we will sample a play from the first down plays, then a play from the second down plays (if needed), then a play from the third down plays (if needed) to see if we can get a first down. We will not consider penalties, nor will we go for it on fourth down.
+
+::: {style="max-width: 420px; margin: 0 auto;"}
+```{mermaid}
+flowchart TD
+    B{
+      DOWN < 4 
+      AND 
+      YARDS GAINED < 10?
+    }
+    B -- No --> E([FIRST DOWN DENIED])
+    B -- Yes --> C[RANDOMLY SAMPLE YARDS GAINED]
+    C --> D{YARDS GAINED > 10?}
+    D -- Yes --> F([FIRST DOWN!])
+    D -- No --> G[NEXT DOWN]
+    G --> B
+```
+:::
 
 ```{python}
 # keep track of downs - must be reset each time we run a series
