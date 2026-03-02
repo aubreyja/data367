@@ -1,0 +1,361 @@
+---
+title: "Simulations Day 2: A Better Baseball Simulation"
+subtitle: "Group Collaboration with Git & GitHub"
+format:
+  html: default
+  pdf: default
+fontsize: 11pt
+---
+
+## Overview
+
+Today you will build a **more realistic baseball simulation** and practice **collaborating as a team using Git and GitHub**. By the end of class your group will have:
+
+- Simulated a full nine-inning baseball game with (somewhat) realistic at-bat outcomes
+- Estimated the expected number of runs scored per game
+- Submitted code via individual branches, pull requests, and a peer-reviewed merge
+
+---
+
+## The Problem
+
+Imagine every hitter in a game has the following outcome probabilities:
+
+| Outcome    | Probability   |
+|------------|---------------|
+| Single     | 930 / 6154    |
+| Double     | 282 / 6154    |
+| Triple     | 20 / 6154     |
+| Home Run   | 213 / 6154    |
+| Walk       | 603 / 6154    |
+| Strikeout  | 4106 / 6154   |
+
+**Simplifying assumptions:**
+
+- No double plays, no errors
+- Baserunners advance **two bases** on singles and doubles
+- Three outs end each half-inning
+- Nine innings per game
+
+**Question:** How many runs do we expect the team to score in a nine-inning game?
+
+---
+
+## Git & GitHub Workflow
+
+Before writing any code, follow these steps:
+
+### Step 0 — Accept assignment and form groups in GitHub Classroom. 
+
+Each group should have 2–4 members.
+
+### Step 1 — Everyone: clone and confirm you're on `main`
+
+On the command line do
+
+```bash
+git clone <your-repo-url>
+cd <your-repo-name>
+git status   # should say: On branch main
+```
+
+### Step 2 — Everyone: create your own branch
+
+Each person creates a branch. Branch names should ideally be named after the task or feature you are working on. For example, you could name your branch `feature/yourname-simulate-at-bat` if you're working on the `simulate_at_bat()` function (with `yourname` replaced with your actual first name).
+
+The following two commands create a new branch and push it to GitHub:
+```bash
+git checkout -b feature/yourname-task
+git push -u origin feature/yourname-task
+```
+
+**Example branch naming:**
+
+| Team Size | Person      | Branch name              | Responsible for             |
+|-----------|-------------|--------------------------|-----------------------------|
+| 2–4       | Person 1    | `feature/name-at-bat`    | At-bat simulation function  |
+| 2–4       | Person 2    | `feature/name-inning`    | Inning simulation function  |
+| 3–4       | Person 3    | `feature/name-game`      | Full game simulation        |
+| 4         | Person 4    | `feature/name-analysis`  | Plots and written analysis  |
+
+> 💡 For teams of 2–3: split the tasks above among your members. Each person
+> still creates their own branch. You can combine "game" and "analysis" into
+> one branch if needed.
+
+### Step 3 — Work on your section (see coding tasks below)
+
+Commit **early and often** as you write. Use descriptive messages:
+
+```bash
+git add simulations-day2.qmd
+git commit -m "Add simulate_at_bat function with outcome probabilities"
+git push
+```
+
+### Step 4 — Open a Pull Request
+
+When your section is done commit and push your work. Then go to GitHub, click **"Compare & pull request"**, and write a brief description following this template:
+
+```
+## What I Did
+[Describe your function/section in 1–2 sentences]
+
+## Files Changed
+- simulations-day2.qmd
+
+## How to Test
+[Explain what someone should see when they run your code block]
+```
+
+Tag a teammate as the reviewer. **Do not merge your own PR.**
+
+### Step 5 — Review and merge a teammate's PR
+
+Read through their code. If it looks correct, approve it and click
+**"Merge pull request"**. If something seems off, leave a comment asking
+about it.
+
+---
+
+## Coding Tasks
+
+Each person fills in their assigned section on their own branch. Once all PRs are merged, the complete file should run top-to-bottom without errors.
+
+---
+
+### Setup (Everyone runs this first)
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Reproducibility — keep this seed throughout
+np.random.seed(42)
+
+# -----------------------------------------------------------
+# Outcome probabilities (do not change these)
+# -----------------------------------------------------------
+outcomes = ["single", "double", "triple", "homerun", "walk", "strikeout"]
+probs    = [930/6154, 282/6154, 20/6154, 213/6154, 603/6154, 4106/6154]
+
+# Testing: probabilities should sum to 1
+# print(f"Probabilities sum to: {sum(probs):.6f}")
+```
+
+---
+
+### Person 1 — `simulate_at_bat()`
+
+**Task:** Write a function that simulates a single plate appearance.
+It should randomly draw one outcome from `outcomes` according to `probs`
+and return a string like `"single"`, `"homerun"`, etc.
+
+```{python}
+def simulate_at_bat():
+    """
+    Simulate one plate appearance.
+
+    Returns
+    -------
+    str
+        One of: 'single', 'double', 'triple', 'homerun', 'walk', 'strikeout'
+
+    Hint: use np.random.choice with the p= parameter.
+    """
+    # TODO: draw one outcome from `outcomes` weighted by `probs`
+    pass
+
+
+# --- Test your function (a few sample at-bats) ---
+# Uncomment the lines below to test once your function is written:
+# for _ in range(5):
+#     print(simulate_at_bat())
+```
+
+---
+
+### Person 2 — `simulate_inning()`
+
+**Task:** Write a function that simulates one half-inning (one team's turn at bat) using `simulate_at_bat()`. Track the base state and count runs until three outs are recorded.
+
+```{python}
+def simulate_inning():
+    """
+    Simulate one half-inning of baseball.
+
+    Returns
+    -------
+    int
+        Number of runs scored in this inning.
+
+    Base-running rules:
+      - Walk:     batter goes to 1st; all runners forced if applicable
+      - Single:   all runners (and batter) advance 2 bases
+      - Double:   all runners (and batter) advance 2 bases
+      - Triple:   all runners score; batter goes to 3rd
+      - Home Run: batter and all runners score
+      - Strikeout: one out recorded; no runners advance
+
+    Hint: represent the bases as a list of three booleans, e.g.
+          bases = [False, False, False]  # [1st, 2nd, 3rd]
+    """
+    runs  = 0
+    outs  = 0
+    bases = [False, False, False]  # [1st base, 2nd base, 3rd base]
+
+    while outs < 3:
+        result = simulate_at_bat()
+
+        if result == "strikeout":
+            # TODO: increment outs
+            pass
+
+        elif result == "walk":
+            # TODO: advance runners only if forced; batter goes to 1st
+            # A walk forces runners only when each base ahead is occupied
+            pass
+
+        elif result in ("single", "double"):
+            # TODO: all runners advance 2 bases; score those who reach home;
+            # batter goes to 1st (single) or 2nd (double) then advances 1 more
+            # Simplification: treat both as "all runners advance 2 bases"
+            # and batter lands on 2nd base.
+            pass
+
+        elif result == "triple":
+            # TODO: all runners score; batter goes to 3rd
+            pass
+
+        elif result == "homerun":
+            # TODO: batter and all runners score; clear the bases
+            pass
+
+    return runs
+
+
+# --- Test: simulate one inning and print the run total ---
+# np.random.seed(42)
+# print(f"Runs scored in one inning: {simulate_inning()}")
+```
+
+---
+
+### Person 3 — `simulate_game()` and many-game simulation
+
+**Task:** Use `simulate_inning()` to simulate a full nine-inning game,
+then run many simulations to estimate the expected number of runs per game.
+
+```{python}
+def simulate_game(num_innings=9):
+    """
+    Simulate one full game for one team.
+
+    Parameters
+    ----------
+    num_innings : int
+        Number of innings to play (default 9).
+
+    Returns
+    -------
+    int
+        Total runs scored in the game.
+
+    Hint: call simulate_inning() once per inning and accumulate runs.
+    """
+    total_runs = 0
+
+    # TODO: loop over num_innings, add runs from each inning
+    pass
+
+    return total_runs
+
+
+# --- Run many simulations ---
+np.random.seed(42)
+num_sims = 10_000
+
+# TODO: create an array to store each game's run total (see np.empty)
+game_runs = None  # replace with your array
+
+for i in range(num_sims):
+    # TODO: simulate one game and store the result in game_runs[i]
+    pass
+
+# TODO: print the average runs per game
+# print(f"Expected runs per 9-inning game: {game_runs.mean():.2f}")
+```
+
+---
+
+### Person 4 — Analysis and plots
+
+**Task:** Once the simulation is complete, visualize the distribution of
+scores and compute a few key statistics.
+
+```{python}
+# -------------------------------------------------------
+# Distribution of runs per game
+# -------------------------------------------------------
+
+# TODO: create a histogram of game_runs
+# - label the x-axis "Runs Scored" and y-axis "Density"
+# - set density=True and edgecolor="black"
+# - add a title: "Distribution of Runs Per 9-Inning Game"
+
+# plt.hist( ... )
+# plt.title(...)
+# plt.xlabel(...)
+# plt.ylabel(...)
+# plt.show()
+```
+
+```{python}
+# -------------------------------------------------------
+# Key statistics
+# -------------------------------------------------------
+
+# TODO: compute and print the following:
+#   1. Average runs per game
+#   2. Median runs per game
+#   3. Probability of scoring 0 runs in a game
+#   4. Probability of scoring more than 10 runs in a game
+
+# Example output format:
+# print(f"Average runs per game:          {game_runs.mean():.2f}")
+# print(f"Median runs per game:           {np.median(game_runs):.1f}")
+# print(f"P(score = 0):                   {(game_runs == 0).mean():.3f}")
+# print(f"P(score > 10):                  {(game_runs > 10).mean():.3f}")
+```
+
+---
+
+## Written Analysis
+
+*After running your simulation, replace these prompts with your answers.*
+
+**1. What is the expected number of runs per game?**
+
+> Your answer here.
+
+**2. Does this match what you'd expect from a real MLB game? Why or why not?**
+
+> Your answer here.
+
+**3. What is one simplifying assumption in this model that you think has the
+biggest effect on accuracy? How would you change the model to be more realistic?**
+
+> Your answer here.
+
+---
+
+## Submission Checklist
+
+Before class ends, confirm:
+
+- [ ] Each group member created their own branch
+- [ ] Each group member committed and pushed at least once on their branch
+- [ ] Each group member opened a Pull Request
+- [ ] No one merged their own PR — a teammate did
+- [ ] All PRs are merged into `main`
+- [ ] The `main` branch runs top-to-bottom without errors
+- [ ] The written analysis section is filled in

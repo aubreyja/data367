@@ -1,0 +1,412 @@
+---
+title: "Collaborating with Git and GitHub"
+subtitle: "Branches, Merging, and Pull Requests"
+author: "DATA 367 · Sports Analytics"
+format:
+  revealjs:
+    theme: default
+    slide-number: true
+    progress: true
+    transition: slide
+    transition-speed: fast
+    highlight-style: github-dark
+    code-block-bg: "#0d1117"
+    code-block-border-left: "#2ECC71"
+    footer: "DATA 367 · Git & GitHub Workflow"
+    width: 1280
+    height: 720
+    margin: 0.06
+    fig-align: center
+    smaller: true
+    include-in-header:
+      text: |
+        <style>
+        :root {
+          --navy:     #1E2761;
+          --ice:      #CADCFC;
+          --green:    #2ECC71;
+          --green-dk: #27AE60;
+          --orange:   #F39C12;
+          --red:      #E74C3C;
+          --muted:    #64748B;
+          --code-bg:  #0d1117;
+        }
+        .reveal h2 {
+          color: var(--navy);
+          font-size: 1.3em;
+          font-weight: 700;
+          margin-bottom: 0.4em;
+          border-bottom: 3px solid var(--green);
+          padding-bottom: 0.15em;
+        }
+        .tip  { background:#FFF8E7; border-left:4px solid var(--orange);  padding:0.4em 0.8em; border-radius:4px; font-size:0.88em; margin:0.3em 0; }
+        .good { background:#E8F5E9; border-left:4px solid var(--green-dk); padding:0.4em 0.8em; border-radius:4px; font-size:0.88em; margin:0.3em 0; }
+        .bad  { background:#FFEBEE; border-left:4px solid var(--red);     padding:0.4em 0.8em; border-radius:4px; font-size:0.88em; margin:0.3em 0; }
+        .info { background:#E3F2FD; border-left:4px solid var(--navy);    padding:0.4em 0.8em; border-radius:4px; font-size:0.88em; margin:0.3em 0; }
+        .cols2 { display:grid; grid-template-columns:1fr 1fr;         gap:1em; }
+        .cols3 { display:grid; grid-template-columns:1fr 1fr 1fr;     gap:0.8em; }
+        .cols4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0.7em; }
+        .card    { border-radius:6px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.1); font-size:0.82em; }
+        .card-hd { color:white; font-weight:700; padding:0.4em; text-align:center; font-size:1.05em; }
+        .card-bd { background:white; padding:0.5em 0.6em; }
+        .card-role { font-weight:600; margin-bottom:0.2em; }
+        .card-task { color:var(--muted); line-height:1.45; }
+        .tag { font-family:monospace; background:var(--code-bg); color:var(--green);
+               padding:0.15em 0.4em; border-radius:3px; font-size:0.85em; display:inline-block; margin-bottom:0.2em; }
+        .steps { display:grid; grid-template-columns:repeat(5,1fr); gap:0.5em; }
+        .step  { border-radius:6px; overflow:hidden; box-shadow:0 1px 5px rgba(0,0,0,.1); text-align:center; }
+        .step-n  { color:white; font-size:1.4em; font-weight:700; padding:0.25em; }
+        .step-ic { font-size:1.6em; padding:0.15em 0; }
+        .step-lb { font-weight:600; padding:0.1em 0.3em; font-size:0.85em; }
+        .step-ds { color:var(--muted); padding:0.1em 0.4em 0.5em; font-size:0.78em; line-height:1.4; }
+        .bdiag { font-family:monospace; background:var(--code-bg); color:#c9d1d9;
+                 padding:0.7em 1em; border-radius:6px; font-size:0.82em; line-height:1.8; white-space:pre; }
+        .ccode { background:var(--code-bg); padding:0.6em 0.8em; border-radius:6px;
+                 font-family:monospace; font-size:0.82em; line-height:1.7; }
+        .dodont  { display:grid; grid-template-columns:1fr 1fr; gap:0.8em; }
+        .do-hd   { background:var(--green-dk); color:white; font-weight:700; padding:0.4em 0.7em; font-size:1em; }
+        .dont-hd { background:var(--red);      color:white; font-weight:700; padding:0.4em 0.7em; font-size:1em; }
+        .do-it   { background:#F1F8E9; border-bottom:1px solid #dce8dc; padding:0.35em 0.7em; font-size:0.85em; }
+        .dont-it { background:#FFF8F8; border-bottom:1px solid #f0d5d5; padding:0.35em 0.7em; font-size:0.85em; }
+        .cheat { display:grid; grid-template-columns:repeat(3,1fr); gap:0.7em; }
+        .csec  { color:var(--green); font-weight:700; font-size:0.82em; text-transform:uppercase;
+                 letter-spacing:.05em; margin-bottom:0.3em; }
+        .ccrd  { background:#16213E; border:1px solid #CADCFC33; border-radius:5px;
+                 padding:0.4em 0.6em; margin-bottom:0.4em; }
+        .cdsc  { color:#94A3B8; font-size:0.78em; margin-bottom:0.1em; }
+        .ccmd  { font-family:monospace; color:var(--green); font-size:0.85em; }
+        .swim { font-family:monospace; background:var(--code-bg); color:#c9d1d9;
+                padding:0.7em 1em; border-radius:6px; font-size:0.75em; line-height:1.9; }
+        .banner { background:var(--navy); color:var(--ice); padding:0.45em 1em;
+                  border-radius:6px; font-size:0.85em; text-align:center; margin-top:0.5em; }
+        .pill { background:#2ECC71; color:#1E2761; font-weight:700; padding:0.3em 0.9em;
+                border-radius:20px; font-size:0.82em; display:inline-block; margin:0.15em 0.2em; }
+        </style>
+---
+
+## Meet the Team
+
+<div class="cols4" style="margin-top:0.4em;">
+
+<div class="card">
+<div class="card-hd" style="background:#1E2761;">👤 Person 1</div>
+<div class="card-bd">
+<div class="card-role" style="color:#1E2761;">⚾ At-Bat</div>
+<div class="tag">feature/name-at-bat</div>
+<div class="card-task">Writes <code>simulate_at_bat()</code><br>Draws a random outcome<br>Uses <code>np.random.choice</code></div>
+</div></div>
+
+<div class="card">
+<div class="card-hd" style="background:#2C5F2D;">👤 Person 2</div>
+<div class="card-bd">
+<div class="card-role" style="color:#2C5F2D;">🏟️ Inning</div>
+<div class="tag">feature/name-inning</div>
+<div class="card-task">Writes <code>simulate_inning()</code><br>Tracks bases &amp; outs<br>Calls <code>simulate_at_bat()</code></div>
+</div></div>
+
+<div class="card">
+<div class="card-hd" style="background:#7B2D8B;">👤 Person 3</div>
+<div class="card-bd">
+<div class="card-role" style="color:#7B2D8B;">🎮 Game</div>
+<div class="tag">feature/name-game</div>
+<div class="card-task">Writes <code>simulate_game()</code><br>Runs 10,000 simulations<br>Calls <code>simulate_inning()</code></div>
+</div></div>
+
+<div class="card">
+<div class="card-hd" style="background:#8B3A00;">👤 Person 4</div>
+<div class="card-bd">
+<div class="card-role" style="color:#8B3A00;">📊 Analysis</div>
+<div class="tag">feature/name-analysis</div>
+<div class="card-task">Plots distribution of scores<br>Computes key stats<br>Writes the interpretation</div>
+</div></div>
+
+</div>s
+
+---
+
+## 🔄 GitHub Flow: The 5-Step Cycle
+
+<div style="color:#1E2761; font-style:italic; font-size:0.88em; margin-bottom:0.5em;">
+One rule: <strong>main is always working.</strong> Everything else is a branch.
+</div>
+
+<div class="steps">
+
+<div class="step">
+<div class="step-n" style="background:#1E2761;">1</div>
+<div class="step-ic">🌿</div>
+<div class="step-lb" style="color:#1E2761;">Create Branch</div>
+<div class="step-ds">New work? New branch. Never touch main directly.</div>
+</div>
+
+<div class="step">
+<div class="step-n" style="background:#2C5F2D;">2</div>
+<div class="step-ic">💾</div>
+<div class="step-lb" style="color:#2C5F2D;">Commit Often</div>
+<div class="step-ds">Small, frequent saves with clear messages.</div>
+</div>
+
+<div class="step">
+<div class="step-n" style="background:#7B2D8B;">3</div>
+<div class="step-ic">📬</div>
+<div class="step-lb" style="color:#7B2D8B;">Open PR</div>
+<div class="step-ds">Tell the team: "I'm ready for review!"</div>
+</div>
+
+<div class="step">
+<div class="step-n" style="background:#8B3A00;">4</div>
+<div class="step-ic">👀</div>
+<div class="step-lb" style="color:#8B3A00;">Review</div>
+<div class="step-ds">Teammates comment and approve.</div>
+</div>
+
+<div class="step">
+<div class="step-n" style="background:#1B4F72;">5</div>
+<div class="step-ic">🎉</div>
+<div class="step-lb" style="color:#1B4F72;">Merge to main</div>
+<div class="step-ds">Your work is officially in the project!</div>
+</div>
+
+</div>
+
+
+---
+
+## 🚀 Initial Setup
+
+**Step 1 — Everyone else accepts the assignment and joins a team***
+
+**Step 2 — Clone it to your laptop**
+
+```bash
+git clone https://github.com/UArizona-Mathematics/simulations-2-teamname.git
+cd simulations-2-teamname
+```
+
+**Step 3 — Create your branch (do this immediately)**
+
+```bash
+git checkout -b feature/alex-at-bat
+# teammates:
+#   feature/blair-inning
+#   feature/casey-game
+#   feature/dana-analysis
+```
+
+**Step 4 — Push your branch to GitHub**
+
+```bash
+git push -u origin feature/alex-at-bat
+```
+
+<div class="tip">
+💡 Name branches <code>feature/yourname-task</code>. Clear names help everyone know who is working on what.
+</div>
+
+---
+
+## 💾 The Commit Loop
+
+Run these every time you sit down to work:
+
+```bash
+# 1. Check what's changed
+git status
+
+# 2. Stage your file
+git add simulations-day2.qmd
+
+# 3. Commit with a descriptive message
+git commit -m "Add simulate_at_bat function using np.random.choice"
+
+# 4. Push to GitHub
+git push origin feature/alex-at-bat
+```
+
+<div class="tip">
+💡 Commit every time you finish something small — even just one function. Smaller commits = much easier to undo mistakes later.
+</div>
+
+---
+
+## 💾 Commit Messages Matter
+
+<div class="cols2">
+
+<div class="good">
+✅ <strong>Good — be specific</strong>
+<pre><code>"Add simulate_at_bat with outcome probabilities"
+"Fix walk logic: force runners when base occupied"
+"Add simulate_game loop over 9 innings"
+"Add histogram and expected runs calculation"</code></pre>
+Tells future-you <em>exactly</em> what changed and why.
+</div>
+
+<div class="bad">
+❌ <strong>Bad — useless</strong>
+<pre><code>"stuff"
+"fix"
+"asdfg"
+"changes"
+"final"
+"FINAL FINAL v2"</code></pre>
+You'll have no idea what you did in three days.
+</div>
+
+</div>
+
+---
+
+## 📬 What is a Pull Request?
+
+<div class="info">
+💡 A <strong>Pull Request (PR)</strong> is you saying to your team: <em>"I finished my function — please look it over before it goes into our simulation."</em>
+</div>
+
+**Steps to open one:**
+
+1. Push your branch: `git push origin feature/alex-at-bat`
+2. Go to the repo on GitHub → click **"Compare & pull request"**
+3. Write a description of what you did and how to test it
+4. **Tag your teammates** as reviewers
+5. Once approved, click **Merge pull request**
+
+<div class="bad">
+🚫 <strong>Team rule:</strong> Nobody merges their own PR. At least one teammate must approve first.
+</div>
+
+---
+
+## 📬 Writing a Good PR Description
+
+```markdown
+## What I Did
+Added simulate_at_bat() using np.random.choice with the six outcome
+probabilities from the problem statement.
+
+## Files Changed
+- simulations-day2.qmd  (Person 1 section)
+
+## How to Test
+Run the test block at the bottom of my section — you should see 5
+random outcomes printed (single, strikeout, walk, etc.).
+
+## Notes
+Probabilities are defined at the top of the Setup block, so make
+sure that cell is run first.
+```
+
+<div class="tip">
+💡 A good PR description saves your reviewer 10 minutes of confusion. Write it like a note to a teammate who has no idea what you've been doing.
+</div>
+
+---
+
+## ⚔️ Merge Conflicts: How to Prevent Them
+
+<div class="bad">
+A conflict happens when two people edit the <strong>same line</strong> of the <strong>same file</strong>. Git can't pick — it asks you to decide.
+</div>
+
+**Prevention strategies:**
+
+- Each person **owns exactly one section** of `simulations-day2.qmd` — don't edit a teammate's code block
+- Always pull from main before starting work:
+
+```bash
+git pull origin main
+```
+
+- Communicate proactively: *"I'm working on my inning function now — don't touch that section"*
+- **Merge in order:** Person 1 first → Person 2 pulls then merges → Person 3 follows → Person 4 last
+
+---
+
+## ⚔️ Merge Conflicts: How to Fix One
+
+When a conflict occurs, Git marks the file like this:
+
+<div class="ccode">
+<span style="color:#E74C3C;">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD  (your branch)</span><br>
+<span style="color:#c9d1d9;">    bases[0] = True   # runner on 1st advances</span><br>
+<span style="color:#F39C12;">=======</span><br>
+<span style="color:#87CEEB;">    bases[1] = True   # runner forced to 2nd</span><br>
+<span style="color:#E74C3C;">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/blair-inning</span>
+</div>
+
+**Fix in 3 steps:**
+
+1. Delete the `<<<<<<<`, `=======`, and `>>>>>>>` marker lines
+2. Keep the correct version of the code
+3. Save, then commit:
+
+```bash
+git add simulations-day2.qmd
+git commit -m "Resolve merge conflict in simulate_inning walk logic"
+```
+
+<div class="tip">
+💡 In <strong>VS Code</strong>: the Source Control panel shows "Accept Current Change" / "Accept Incoming Change" buttons — no manual marker editing needed.
+</div>
+
+---
+
+## ✅ / ❌ Git Ground Rules
+
+<div class="dodont">
+
+<div>
+<div class="do-hd">✅ DO</div>
+<div class="do-it">✔ Create a branch for your task</div>
+<div class="do-it">✔ Write descriptive commit messages</div>
+<div class="do-it">✔ Pull from main before each session</div>
+<div class="do-it">✔ Review teammates' PRs promptly</div>
+<div class="do-it">✔ Only edit your own assigned section</div>
+<div class="do-it">✔ Merge only via PR — never push to main directly</div>
+</div>
+
+<div>
+<div class="dont-hd">❌ DON'T</div>
+<div class="dont-it">✖ Commit directly to main</div>
+<div class="dont-it">✖ Write "fix", "stuff", or "asdfg" as messages</div>
+<div class="dont-it">✖ Work through the whole activity without committing</div>
+<div class="dont-it">✖ Merge your own PR without a review</div>
+<div class="dont-it">✖ Edit someone else's function without asking first</div>
+<div class="dont-it">✖ Wait until the last minute to push your work</div>
+</div>
+
+</div>
+
+---
+
+## ⚡ Command Cheat Sheet {background-color="#1A1A2E"}
+
+<div class="cheat">
+
+<div>
+<div class="csec">Setup (once)</div>
+<div class="ccrd"><div class="cdsc">Clone the repo</div><div class="ccmd">git clone &lt;url&gt;</div></div>
+<div class="ccrd"><div class="cdsc">Create your branch</div><div class="ccmd">git checkout -b feature/name-task</div></div>
+<div class="ccrd"><div class="cdsc">Push branch to GitHub</div><div class="ccmd">git push -u origin feature/name-task</div></div>
+</div>
+
+<div>
+<div class="csec">Daily Work</div>
+<div class="ccrd"><div class="cdsc">See what changed</div><div class="ccmd">git status</div></div>
+<div class="ccrd"><div class="cdsc">Stage changes</div><div class="ccmd">git add simulations-day2.qmd</div></div>
+<div class="ccrd"><div class="cdsc">Commit with message</div><div class="ccmd">git commit -m "Your message"</div></div>
+<div class="ccrd"><div class="cdsc">Push to GitHub</div><div class="ccmd">git push</div></div>
+</div>
+
+<div>
+<div class="csec">Stay in Sync</div>
+<div class="ccrd"><div class="cdsc">Pull latest main</div><div class="ccmd">git pull origin main</div></div>
+<div class="ccrd"><div class="cdsc">Switch branches</div><div class="ccmd">git checkout feature/name-task</div></div>
+<div class="ccrd"><div class="cdsc">List all branches</div><div class="ccmd">git branch -a</div></div>
+</div>
+
+</div>
+
+<div style="background:#1E2761; color:#2ECC71; font-weight:700; padding:0.5em 1em; border-radius:6px; text-align:center; font-size:1em; margin-top:0.6em;">
+🎯 Branch → Commit → Push → Pull Request → Review → Merge. Repeat.
+</div>
