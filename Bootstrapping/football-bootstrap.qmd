@@ -245,29 +245,50 @@ prob_1stdown = [simulate_possession(plays) for i in range(num_sims)]
 np.mean(prob_1stdown)
 ```
 
-
-## Group Activities
-
-### Passing on First Down
-
-What if we modified our simulation so that we only passed the ball on first down? Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays when we pass on first down.
-
----
-
-### Running on First Down
-
-What if we modified our simulation so that we only ran the ball on first down? Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays when we run on first down.
+We find that there's a 82% chance the Patriots of reaching first down. We have no idea how reliable this number is, so we apply bootstrapping to figure it out. 
 
 ```{python}
+# Wrap Probability Estimation in a Function
+def est_prob_1stdown(plays, num_sims=100):
+  prob_1stdown = [
+    simulate_possession(plays) 
+    for i in range(num_sims)
+  ]
+  return np.mean(prob_1stdown)
 
+# Calculate Bootstrapped Confidence Interval
+bootstrap_probs = [
+  est_prob_1stdown(
+    plays.sample(n=n, replace=True), 
+    num_sims=100
+  ) 
+  for _ in range(100)        # repeat many times
+]
+
+# Get 95% Confidence Interval
+ci_lo, ci_hi = np.percentile(bootstrap_probs, [2.5, 97.5])
+print(f"Bootstrap 95% CI: ({ci_lo:.3f}, {ci_hi:.3f})")
 ```
 
----
-
-### Adjusting 2nd and 3rd Down Based on Yards to Go
-
-Adjust the model to select only plays with (about) the same yards to go. For example, if it is 2nd down with 6 yards to go, randomly select a play (either running or passing) from the season that was 2nd down and between 5 and 7 yards to go. Do the same for 3rd down. Adjust the simulation to account for this modification, and run 10000 series. Give the approximate probability of getting a first down in at most three plays.
 
 ```{python}
-
+plt.hist(bootstrap_probs, bins=25, edgecolor="black")
+plt.axvline(ci_lo, color="red", linestyle="--", label="2.5th percentile")
+plt.axvline(ci_hi, color="red", linestyle="--", label="97.5th percentile")
+plt.xlabel("Estimated first-down probability")
+plt.ylabel("Count")
+plt.title("Bootstrap Distribution of First-Down Probability")
+plt.legend()
+plt.show()
 ```
+
+## In-Class Activities
+
+1. Get the probability that yards gained is greater than 0. Get the corresponding bootstrap confidence interval.   
+2. Get a confidence interval around the 90th percentile of yards gained (hint: use `quantile` function)   
+3. Does the yards gained differ between downs? Get the bootstrapped confidence interval of each down to answer the question. 
+4. Modify the code so we output the yards gained from the series instead of whether we gained first down or not.  
+5. **Passing on first down**. What if we modified our simulation so that we only passed the ball on first down? Adjust the simulation to account for this modification. Give the probability of getting a first down when we pass on first down.  
+6. **Running on first down**. What if we modified our simulation so that we only ran the ball on first down? Adjust the simulation to account for this modification. Give the approximate probability of getting a first down when we run on first down.  
+7. **Adjusting 2nd and 3rd Down Based on Yards to Go**. Adjust the model to select only plays with (about) the same yards to go. For example, if it is 2nd down with 6 yards to go, randomly select a play (either running or passing) from the season that was 2nd down and between 5 and 7 yards to go. Do the same for 3rd down. Adjust the simulation to account for this modification. Give the approximate probability of getting a first down in at most three plays.  
+8. **Average drive length**. Modify the simulation so that whenever a first down is achieved, the offense gets a new set of downs and the simulation continues. Use this to estimate the average drive length.  
