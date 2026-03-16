@@ -126,7 +126,7 @@ The purpose of this paper is to find and analyze a published sports analytics ar
 
 Your paper should be **3–5 pages** of written analysis (not counting code and output) and must address all of the following:
 
-### 1. Summary of the Article (1 paragraph)
+### 1. Summary of the Article
 
 Provide a clear summary of the article you chose. What is the author's main thesis? What question are they trying to answer? What sport and what players or teams are involved?
 
@@ -135,7 +135,7 @@ Provide a clear summary of the article you chose. What is the author's main thes
 This is the core of the paper. Devote the most space to this section. Address all four of the following:
 
 **A. Explanation of the metric:**
-Walk your reader through how the metric is calculated, step by step. Include the formula if one exists. Your explanation should be detailed enough that a student who has not read the article could calculate the metric themselves. *If you can get hold of the data used in the article and reproduce the calculation in Python, this is strongly encouraged and will be rewarded.*
+Walk your reader through how the metric is calculated, step by step. Include the formula if one exists. Your explanation should be detailed enough that a student who has not read the article could calculate the metric themselves. *If you can get hold of the data used in the article and reproduce the calculation in Python, this is strongly encouraged.*
 
 **B. Positive features:**
 What does this metric do well? How is it an improvement over simpler, older methods? Why did the author choose this metric rather than a more traditional statistic?
@@ -146,7 +146,7 @@ What are the limitations of this metric? What assumptions does it make that migh
 **D. Connection to the author's argument:**
 How does the metric support (or complicate) the author's thesis? Are there any concerns about using this particular metric to support this particular argument?
 
-### 3. Other Analytics in the Article (1–2 paragraphs)
+### 3. Other Analytics in the Article
 
 If the article uses other analytical methods or metrics beyond the primary one you analyzed, give a brief description of each. Comment on whether each one is used appropriately to support the argument.
 
