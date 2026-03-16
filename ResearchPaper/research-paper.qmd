@@ -13,6 +13,8 @@ Modern sports analytics has moved far beyond batting averages and points per gam
 
 Below is a brief introduction to several of the most widely used advanced metrics, along with a concrete example in each of the four major sports. These are the kinds of metrics you are likely to encounter when searching for articles to analyze in this assignment.
 
+**Important Note**: You may use one of the metrics below, but you are not required to. If you find an article that uses a different advanced metric, that is perfectly fine, and actually encouraged. Just make sure to explain it clearly in your paper. If you use one of the metrics below, do not simply copy the explanations here and do not use the articles highlighted below as your primary source. You must find a different article that uses the metric and analyze it in your own words.
+
 ---
 
 ### Where to Find Advanced Analytics Writing
