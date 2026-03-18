@@ -10,13 +10,6 @@ execute:
 jupyter: python3
 ---
 
-```{python}
-import matplotlib.pyplot as plt
-from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import linkage, fcluster, dendrogram
-from sklearn.cluster import KMeans
-import plotly.express as px
-```
 
 ## Introduction to Clustering
 
@@ -32,9 +25,6 @@ Both require a label. Someone had to write down the points scored; someone had t
 **Similarity.** Two players are "similar" if their statistics are close together. We measure closeness with _Euclidean distance_ (there are other metrics, but this is the simplest): 
 
 $$d(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}.$$
-
-For two players $P$ and $Q$ described by points per game and assists, the distance between them is:
-$$d(P, Q) = \sqrt{(\text{PTS}_P - \text{PTS}_Q)^2 + (\text{AST}_P - \text{AST}_Q)^2}$$
 
 **Scaling.** Without scaling, one dimension may be more influential than another. For example,   
 
@@ -89,7 +79,7 @@ players = players_all[cols_pg]
 
 ## Similarity and Scaling
 
-### Comparing two players
+### Comparing Players
 Let's look at a few players and consider how similar/dissimilar they are. How "close" or "similar" are the players? All of them were on the Cleveland Cavaliers in 2018. Let's look at their `PTS_per_G` and `AST` and compute the Euclidean distance between them.
 
 ```{python}
@@ -115,12 +105,18 @@ Therefore, LeBron James is more similar to Kevin Love than he is to JR Smith.
 
 
 ### Scaling
-From the figure below, we see that points range from 0 to 30, whereas assists range from 0 to 10. Therefore, points count more toward their "similarity" score than assists. We should normalize our data so that they are equally influential. We scale them so that all data fall in $[0, 1]$. 
+From the figure below, we see that points range from 0 to 30, whereas assists range from 0 to 10. Therefore, points count more toward their "similarity" score than assists. We should normalize our data so that they are equally influential. 
+
+Before we do clustering, we should scale our data. The most convenient way to do this is to scale it so all of the data falls in $[0, 1]$. 
 
 ```{python}
 # Scale Data to [0, 1]
 players['PTS_per_G_std'] = players['PTS_per_G'] / players['PTS_per_G'].max()
 players['AST_std'] = players['AST'] / players['AST'].max()
+```
+
+```{python}
+import matplotlib.pyplot as plt
 
 # Left — raw
 fig, axes = plt.subplots(1, 2, figsize=(8, 4))
@@ -144,28 +140,67 @@ Now, every feature contributes equally to the Euclidean distance, which is exact
 ---
 
 ## K-Means Clustering
+![K-Means convergence animation. Source: [Wikimedia                                                                    Commons](https://commons.wikimedia.org/wiki/File:K-means_convergence.gif), CC BY-SA3.0.](https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/K-means_convergence.gif/500px-K-means_convergence.gif)
 
-### The algorithm
+K-Means is an algorithm for cluster assignment:
 
-K-Means is an iterative refinement on top of whatever initial cluster assignments we start with:
+1. **Initialize**. Randomly place $K$ centroids.
+2. **Assign**. Each point is assigned to its nearest centroid. 
+3. **Update**. The centroid is updated to be the mean of all points assigned to it.
+4. **Repeat**. Keep alternating steps 2 and 3 until no points switch clusters. 
 
-1. **Assign** — each player joins the cluster whose centroid is closest to them.
-2. **Update** — recompute each cluster's centroid as the mean of its members.
-3. **Repeat** — keep alternating steps 1 and 2 until no player switches clusters.
+K-Means can be sensitive to where the centroids start, so we set a seed to get reproducible results. 
 
-K-Means can be sensitive to where the centroids start. Instead of random initialization, we **seed K-Means with the HCA centroids**. HCA already found a reasonable grouping; K-Means then refines it. This gives us stable, reproducible results.
+### Fitting K-Means
+We fit the clustering algorithm to the data and assign clusters with this code: 
 
-### Choosing Number of Clusters — The Elbow Method
+```{python}
+from sklearn.cluster import KMeans
+
+# Fit K-Means Clustering
+kmeans_fit = KMeans(
+  n_clusters=6, 
+  random_state=42 # random seed
+)
+kmeans_fit.fit(players[['PTS_per_G_std', 'AST_std']])
+
+# Assign Labels
+players['cluster_num'] = kmeans_fit.labels_.astype(str)
+```
+
+We can use `matplotlib` to plot the data. However, if we want to have interactive elements, we use the `plotly` library. We can however over each point and see which player it represents: 
+
+```{python}
+import plotly.express as px
+
+# Create Figure
+fig = px.scatter(
+    players, x='AST', y='PTS_per_G',
+    color='cluster_num',
+    hover_name='player',
+    labels={
+      'AST': 'Assists Per Game', 
+      'PTS_per_G': 'Points Per Game'
+    },
+    title='K-Means Clusters (interactive)'
+)
+fig.show()
+```
+
+Looking at the plot, we can begin to reason about what each cluster represents. Clusters in the upper-right have high points *and* high assists. Clusters along the upper edge but shifted left are scorers who don't distribute much. Clusters in the lower-left are bench contributors with limited offensive roles.
+
+### Choosing Number of Clusters: The Elbow Method
+We arbitrarily chose to create 6 clusters. How do we know how many clusters to choose? 
 
 K-Means requires us to specify k upfront. To choose a reasonable value, we fit the model for a range of k values and track the **within-cluster sum of squares (WCSS)**: the total squared distance from every player to their cluster's centroid. Smaller WCSS means tighter, more cohesive clusters.
 
-As k increases, WCSS always decreases — in the extreme, every player is their own cluster and WCSS is zero. So we're not looking for the minimum; we're looking for the point of **diminishing returns**, where adding another cluster stops meaningfully tightening the groups. This bend in the curve is called the **elbow**.
+As k increases, WCSS always decreases. In the extreme case, every player is their own cluster and WCSS is zero. So we're not looking for the minimum; we're looking for the point of **diminishing returns**, where adding another cluster stops meaningfully tightening the groups. This bend in the curve is called the **elbow**.
 
 ```{python}
 wcss = []
 k_range = range(1, 11)
 for k in k_range:
-    km = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
+    km = KMeans(n_clusters=k, random_state=42)
     km.fit(players[['PTS_per_G_std', 'AST_std']])
     wcss.append(km.inertia_)
 
@@ -177,49 +212,20 @@ ax.set_title('Elbow Method for Choosing k')
 plt.show()
 ```
 
-The curve bends noticeably around k = 4–6, after which additional clusters provide only marginal improvement. We'll proceed with **k = 6** to capture finer distinctions in player roles.
+The curve bends noticeably around k = 4–6, after which additional clusters provide only marginal improvement. We'll proceed with k = 4. 
 
-### Fitting K-Means
+### Assigning readable labels
 
 ```{python}
 # Fit K-Means Clustering
-kmeans_fit = KMeans(
-  n_clusters=6, 
-  init='k-means++', 
-  n_init=10, 
-  random_state=42
-)
+kmeans_fit = KMeans(n_clusters=4, random_state=42)
 kmeans_fit.fit(players[['PTS_per_G_std', 'AST_std']])
+players['cluster_num'] = kmeans_fit.labels_.astype(str)
 
-# Assign Labels
-players['cluster_num'] = kmeans_fit.labels_
-```
-
-### Exploring the raw clusters
-
-Before assigning meaningful labels, let's plot the clusters using their raw numeric IDs. This lets us see what the algorithm actually found — and reason about what each group might represent.
-
-```{python}
-# Plot Clusters 
-for num in sorted(players['cluster_num'].unique()):
-    group = players[players['cluster_num'] == num]
-    plt.scatter(
-      group['AST'], group['PTS_per_G'], 
-      label=f'Cluster {num}', alpha=0.7, s=50
-    )
-
-plt.xlabel('Assists Per Game')
-plt.ylabel('Points Per Game')
-plt.title('K-Means Clusters')
-plt.legend()
-plt.show()
-```
-
-```{python}
-players['cluster_label'] = players['cluster_num'].astype(str)
+# Create Figure
 fig = px.scatter(
     players, x='AST', y='PTS_per_G',
-    color='cluster_label',
+    color='cluster_num',
     hover_name='player',
     labels={
       'AST': 'Assists Per Game', 
@@ -230,157 +236,48 @@ fig = px.scatter(
 fig.show()
 ```
 
-Looking at the plot, we can begin to reason about what each cluster represents. Clusters in the upper-right have high points *and* high assists — likely primary creators. Clusters along the upper edge but shifted left are scorers who don't distribute much. Clusters in the lower-left are bench contributors with limited offensive roles.
+### Interpreting the Archetypes
 
-### Assigning readable labels
+With 4 clusters, it's a lot easier to interpret. The algorithm seems to classify the players as 
 
-Rather than sorting by PTS alone, we use the **centroid position in 2D PTS × AST space** to assign labels. We first rank all six clusters by average PTS, giving us a low → high scoring spectrum. The bottom four get fixed labels ascending in offensive impact: **Specialists**, **Bench Contributors**, **Role Players**, and **Secondary Scorers**. Then, for the two highest-scoring clusters, we use their average AST to distinguish *how* they score: a cluster with both high PTS and high AST is the true dual-threat group — **Playmaking Stars** — while the cluster with high PTS but lower AST contains volume scorers who operate more off-ball — **Scorers**.
+1. **Superstars**: High scoring, high assists.  
+2. **High scoring**, low assists.   
+3. **Low scoring**, high assists.   
+4. **Bench-Players**: Low scoring, low assists.  
 
-```{python}
-centroids_pos = players.groupby('cluster_num')[['PTS_per_G_std', 'AST_std']].mean()
-
-# Sort all six clusters by average PTS (low → high)
-sorted_by_pts = centroids_pos.sort_values('PTS_per_G_std')
-indices = sorted_by_pts.index.tolist()
-
-# Bottom four clusters by scoring
-label_map = {
-    indices[0]: 'Specialists',
-    indices[1]: 'Bench Contributors',
-    indices[2]: 'Role Players',
-    indices[3]: 'Secondary Scorers',
-}
-
-# Top two clusters: distinguish by AST — higher AST → Playmaking Stars
-top_two = centroids_pos.loc[indices[4:]]
-high_ast_idx = top_two['AST_std'].idxmax()
-low_ast_idx  = top_two['AST_std'].idxmin()
-label_map[high_ast_idx] = 'Playmaking Stars'
-label_map[low_ast_idx]  = 'Scorers'
-
-players['cluster'] = players['cluster_num'].map(label_map)
-```
-
-### Plotting the archetypes
-
-```{python}
-color_map = {
-    'Playmaking Stars':   'red',
-    'Scorers':            'darkorange',
-    'Secondary Scorers':  'gold',
-    'Role Players':       'seagreen',
-    'Bench Contributors': 'steelblue',
-    'Specialists':        'dodgerblue'
-}
-
-cluster_order = ['Playmaking Stars', 'Scorers', 'Secondary Scorers',
-                 'Role Players', 'Bench Contributors', 'Specialists']
-
-fig, ax = plt.subplots(figsize=(10, 7))
-for cluster in cluster_order:
-    group = players[players['cluster'] == cluster]
-    ax.scatter(group['AST'], group['PTS_per_G'], c=color_map[cluster],
-               label=cluster, alpha=0.7, s=50)
-
-ax.set_xlabel('Assists Per Game')
-ax.set_ylabel('Points Per Game')
-ax.set_title('2018 NBA Player Archetypes')
-ax.legend()
-plt.tight_layout()
-plt.show()
-```
-
-Six distinct groups are visible. The red Playmaking Stars sit furthest to the upper-right — high scoring *and* high assists. Orange Scorers are high on the Y-axis (PTS) but spread more to the left (fewer assists). Gold Secondary Scorers form a mid-to-upper tier with moderate-to-good scoring. Green Role Players are rotation contributors with moderate production. Steel-blue Bench Contributors sit lower on both axes. Blue Specialists cluster in the lower-left with the fewest minutes and lowest production. Notice that the clusters run roughly along a diagonal from lower-left to upper-right — this is the key pattern in the data: scoring and playmaking ability tend to move together.
-
----
-
-## Section 5 — Do the Clusters Make Sense?
-
-Now that the model has run, the most important question is: **do the clusters pass the smell test?** We should see recognizable primary creators in the Playmaking Stars cluster, volume scorers in Scorers, solid secondary options in Secondary Scorers, rotation contributors in Role Players, limited-role contributors in Bench Contributors, and deep bench players in Specialists.
-
-### Top players per cluster
-
-```{python}
-for label in cluster_order:
-    top = (players[players['cluster'] == label]
-           .sort_values('PTS_per_G', ascending=False)
-           [['player', 'PTS_per_G', 'AST', 'MP']]
-           .head(8))
-    print(f"\n--- {label.upper()} (top 8 by PTS_per_G) ---")
-    print(top.to_string(index=False))
-```
-
-### Cluster summary statistics
-
-```{python}
-summary = (players
-           .groupby('cluster')[['PTS_per_G', 'AST', 'MP']]
-           .mean()
-           .round(2))
-print("Mean statistics by cluster:")
-print(summary)
-```
-
-### Interpretation
-
-The numbers and the names should reinforce each other:
-
-- **Playmaking Stars** — High PTS *and* high AST relative to all other clusters. Primary offensive creators who both score and distribute. Think LeBron James, James Harden, Russell Westbrook. What makes this group distinct is that the algorithm separated them not just because they score a lot, but because they *also* have the highest assist rates — dual-threat players who carry the offense in two ways.
-
-- **Scorers** — High PTS like the Playmaking Stars, but with notably lower AST. Volume scorers who operate off the ball, in isolation, or in systems that run through someone else. The geometry is telling: these players are high on the Y-axis but shifted left compared to Playmaking Stars.
-
-- **Secondary Scorers** — Solid contributors with above-average PTS but well below the top tier. Capable offensive options who serve as a team's third or fourth scoring option.
-
-- **Role Players** — Middle-tier contributors with moderate scoring and assists. Capable rotation players who play meaningful minutes but are not primary offensive options.
-
-- **Bench Contributors** — Below-average production on both axes. Players with defined but limited roles, typically used in specific matchups or to provide rest for starters.
-
-- **Specialists** — Low scoring and low assists. The largest cluster — most NBA players are deep bench contributors with limited offensive opportunity. Low numbers here reflect limited *role*, not necessarily limited *ability*.
-
-**A key observation:** The six clusters run roughly along a diagonal in PTS × AST space — from low/low (Specialists) to high/high (Playmaking Stars). There is no natural cluster of "high assists, low scoring" players, which would represent a pure pass-first point guard archetype. This tells us something real about the NBA: players who are great playmakers tend *also* to be good scorers. A pure distributor who doesn't score is rare enough that they don't form their own cluster.
-
-**An important limitation:** Big men who score but rarely assist — DeAndre Jordan, Clint Capela — appear in the Specialists or Role Players cluster even if they are crucial starters. Assists are a point guard's currency. A center who grabs 14 rebounds and protects the rim provides enormous value that this two-variable model completely misses. This is a worthwhile discussion: *what do our features actually capture, and what do they miss?*
+Increasing the number of clusters makes the groups more specific and descriptive, but at the cost of lack of interpretability. 
 
 --- 
 
-### Fitting HCA
+## In-Class Activity
 
-Hierarchical Agglomerative Clustering (HCA) starts with every player in their own cluster and repeatedly merges the two closest clusters until only one remains. We use **Ward's linkage**, which merges clusters in a way that minimizes the increase in total within-cluster variance — it tends to produce compact, evenly-sized clusters.
+### Part 1: Adding a Defensive Dimension
 
-```{python}
-# Create Distance Matrix: distance from every point to every other point
-d_matrix  = pdist(players[['PTS_per_G_std', 'AST_std']], metric='euclidean')
+So far we have only used two offensive statistics — `PTS_per_G` and `AST`. What happens when we bring in a defensive statistic?
 
-# Apply Hierarchical Clustering
-hclust_fit = linkage(d_matrix, method='ward')
+**Questions**
 
-# Assign Clusters 
-num_clusters = 4
-players['cluster'] = fcluster(hclust_fit, t=num_clusters, criterion='maxclust')
-```
+1. **Add total rebounds (`TRB`).** Refit K-Means on all three variables: `PTS_per_G`, `AST`, and `TRB` (remember to scale all three). Use $k = 6$. How do the cluster assignments change compared to the two-variable model?
 
-### Reading the dendrogram
+2. **Interpret the new clusters.** Do the archetypes shift? Are there new groupings that the two-variable model could not detect? Name and describe each cluster.
 
-A **dendrogram** is a tree diagram that records every merge HCA made. The height of each horizontal bar represents how dissimilar the two groups were when they merged. Tall vertical lines before the cut point mean the algorithm is combining groups that are genuinely far apart — those are the natural boundaries we want to preserve.
+3. **Reflection.** What are the trade-offs of adding more variables? Why is visualization harder with three features than with two?
 
-```{python}
-fig, ax = plt.subplots(figsize=(8, 5))
+---
 
-dendrogram(
-    hclust_fit,
-    truncate_mode='lastp',   # show only the last p merges
-    ax=ax
-)
+### Part 2: Clustering in Your Sport
 
-ax.set_title("Dendrogram")
-ax.set_xlabel("Player groups (each leaf may represent multiple players)")
-ax.set_ylabel("Ward linkage distance")
-ax.legend()
-plt.tight_layout()
-plt.show()
-```
+Pick a sport you're interested in and find a player statistics dataset for it. Choose two performance statistics to cluster on.
 
-**How to read this:** Start at the bottom and work upward. Each join represents two groups being merged. The dashed red line marks our chosen cut point. Any vertical line that crosses that line represents a distinct cluster. We see **four** long vertical lines below the cut — meaning there are four groups that are genuinely well-separated before the algorithm is forced to merge them.
+**Questions**
 
-Based on this, and because four clusters let us distinguish *how* players contribute offensively — not just *how much* — we proceed with **k = 4**. This gives us richer archetypes: Playmaking Stars, Scorers, Role Players, and Specialists.
+4. **Choose a sport and statistics.** What sport did you pick? Which two statistics will you cluster on, and why are they interesting?
+
+5. **Create an elbow plot.** Fit K-Means for $k = 1$ through $10$ and plot WCSS vs. $k$. Where does the elbow appear? How many clusters did you choose?
+
+6. **Fit K-Means and plot the clusters.** Use your chosen $k$ and display the result on a scatter plot, coloring each cluster differently.
+
+7. **Describe each cluster.** Give each cluster a meaningful name and describe what kind of player belongs there. Name at least 2–3 players per cluster as evidence.
+
+8. **Shrink the clusters.** Refit with $k - 1$ (one fewer cluster than you chose). What changes? Are any of your archetypes merged together? Does the result still make sense?
 
