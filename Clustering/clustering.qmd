@@ -11,8 +11,6 @@ jupyter: python3
 ---
 
 ```{python}
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import linkage, fcluster, dendrogram
@@ -54,23 +52,16 @@ In this lesson we use the **2018 NBA per-game dataset** to find natural player a
 We start with loading the data and doing some data exploration. 
 
 ```{python}
+import pandas as pd
+import numpy as np
+
 # Load Data
 players_all = pd.read_csv("data/per_game_2018.csv")
+
+# Focus on These Columns
 cols_pg = ["player", "age", "G", "GS", "MP", "FG_per", "3P_per", "2P_per",
            "FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_G", "team"]
-players = players_all[cols_pg].copy()
-```
-
-### Data Cleaning
-Some players appear in the dataset after playing only a handful of minutes across the entire season. To address this, we remove:
-
-- Players in the **bottom 10% of minutes per game**.
-- Players who appeared in **fewer than 10 games**.
-
-```{python}
-#rm_ind = (players['MP'] > players['MP'].quantile(0.10)) | (players['G'] > 10)
-#players = players[rm_ind].reset_index(drop=True)
-#print(f"Players remaining: {len(players)}")
+players = players_all[cols_pg]
 ```
 
 **Description of the data:**
@@ -99,75 +90,56 @@ Some players appear in the dataset after playing only a handful of minutes acros
 ## Similarity and Scaling
 
 ### Comparing two players
-
-Before we build any model, let's make the distance concept concrete. Consider LeBron James and Danny Green. Both were on the Cleveland Cavaliers in 2018, but clearly very different players. Let's look at their `PTS_per_G` and `AST` and compute the Euclidean distance between them.
+Let's look at a few players and consider how similar/dissimilar they are. How "close" or "similar" are the players? All of them were on the Cleveland Cavaliers in 2018. Let's look at their `PTS_per_G` and `AST` and compute the Euclidean distance between them.
 
 ```{python}
-lebron = players[players['player'] == 'LeBron James'][['player', 'PTS_per_G', 'AST']]
-danny  = players[players['player'] == 'Danny Green'][['player', 'PTS_per_G', 'AST']]
-
-print("LeBron James:")
-print(lebron.to_string(index=False))
-print("\nDanny Green:")
-print(danny.to_string(index=False))
-
-pts_diff = float(lebron['PTS_per_G'].values[0]) - float(danny['PTS_per_G'].values[0])
-ast_diff = float(lebron['AST'].values[0])       - float(danny['AST'].values[0])
-dist_raw = np.sqrt(pts_diff**2 + ast_diff**2)
-print(f"\nEuclidean distance (raw):  {dist_raw:.2f}")
-print(f"  PTS component: {abs(pts_diff):.2f}")
-print(f"  AST component: {abs(ast_diff):.2f}")
+# Filter to Player Data
+players[
+  (players['player'] == "LeBron James") |  
+  (players['player'] == "Kevin Love") | 
+  (players['player'] == "J.R. Smith")
+][['player', 'PTS_per_G', 'AST']]
 ```
 
-Notice that the PTS difference is much larger than the AST difference in absolute terms. This means the points dimension is driving almost all of the distance — assists barely matter.
+The Euclidean distance between LeBron James and JR Smith is 
+```{python}
+np.sqrt((27.5 - 8.3)**2 + (9.1 - 1.8)**2)
+```
 
-### Why we scale
+The Euclidean distance between LeBron James and Kevin Love is 
+```{python}
+np.sqrt((27.5 - 17.6)**2 + (9.1 - 1.7)**2)
+```
 
-The plot below makes the problem visual. On the left, the raw scatter shows how the Y-axis (PTS_per_G) has a much larger range than the X-axis (AST), compressing horizontal variation. On the right, after min-max scaling both features to [0, 1], the axes are equal and every feature contributes fairly.
+Therefore, LeBron James is more similar to Kevin Love than he is to JR Smith. 
+
+
+### Scaling
+From the figure below, we see that points range from 0 to 30, whereas assists range from 0 to 10. Therefore, points count more toward their "similarity" score than assists. We should normalize our data so that they are equally influential. We scale them so that all data fall in $[0, 1]$. 
 
 ```{python}
-pts_max = players['PTS_per_G'].max()
-ast_max = players['AST'].max()
-pts_scaled = players['PTS_per_G'] / pts_max
-ast_scaled = players['AST'] / ast_max
-
-fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+# Scale Data to [0, 1]
+players['PTS_per_G_std'] = players['PTS_per_G'] / players['PTS_per_G'].max()
+players['AST_std'] = players['AST'] / players['AST'].max()
 
 # Left — raw
+fig, axes = plt.subplots(1, 2, figsize=(8, 4))
 axes[0].scatter(players['AST'], players['PTS_per_G'],
-                alpha=0.5, color='dodgerblue', s=20)
+                alpha=0.5, color='blue', s=20)
 axes[0].set_xlabel('AST (raw)')
 axes[0].set_ylabel('PTS_per_G (raw)')
 axes[0].set_title('Raw: PTS dominates the axis range')
 
 # Right — scaled
-axes[1].scatter(ast_scaled, pts_scaled,
+axes[1].scatter(players['AST_std'], players['PTS_per_G_std'],
                 alpha=0.5, color='seagreen', s=20)
 axes[1].set_xlabel('AST (scaled 0–1)')
 axes[1].set_ylabel('PTS_per_G (scaled 0–1)')
 axes[1].set_title('Scaled: axes now equal')
-
-fig.suptitle('Same data — very different distances', fontsize=13, fontweight='bold')
-plt.tight_layout()
 plt.show()
 ```
 
-After scaling, a player who scores 0 points in 10 minutes per game and a player who has 0 assists are treated symmetrically. Every feature contributes equally to the Euclidean distance, which is exactly what we want.
-
----
-
-## Identifying Number of Clusters
-
-
-### Min/Max Scaling
-
-We divide each column by its maximum so all values land in [0, 1]. When doing this, it's important to look out for outliers. 
-
-```{python}
-players['PTS_per_G_std'] = players['PTS_per_G'] / players['PTS_per_G'].max()
-players['AST_std'] = players['AST'] / players['AST'].max()
-players['TRB_std'] = players['TRB'] / players['TRB'].max()
-```
+Now, every feature contributes equally to the Euclidean distance, which is exactly what we want.
 
 ---
 
@@ -241,7 +213,6 @@ plt.ylabel('Points Per Game')
 plt.title('K-Means Clusters')
 plt.legend()
 plt.show()
-
 ```
 
 ```{python}
@@ -250,7 +221,10 @@ fig = px.scatter(
     players, x='AST', y='PTS_per_G',
     color='cluster_label',
     hover_name='player',
-    labels={'AST': 'Assists Per Game', 'PTS_per_G': 'Points Per Game', 'cluster_label': 'Cluster'},
+    labels={
+      'AST': 'Assists Per Game', 
+      'PTS_per_G': 'Points Per Game'
+    },
     title='K-Means Clusters (interactive)'
 )
 fig.show()
@@ -260,23 +234,25 @@ Looking at the plot, we can begin to reason about what each cluster represents. 
 
 ### Assigning readable labels
 
-Rather than sorting by PTS alone, we use the **centroid position in 2D PTS × AST space** to assign labels. We first rank clusters by average PTS, giving us a low → high scoring spectrum. Then, for the two highest-scoring clusters, we use their average AST to distinguish *how* they score: a cluster with both high PTS and high AST is the true dual-threat group — **Playmaking Stars** — while the cluster with high PTS but lower AST contains volume scorers who operate more off-ball — **Scorers**. The two lower-scoring clusters become **Role Players** and **Specialists**.
+Rather than sorting by PTS alone, we use the **centroid position in 2D PTS × AST space** to assign labels. We first rank all six clusters by average PTS, giving us a low → high scoring spectrum. The bottom four get fixed labels ascending in offensive impact: **Specialists**, **Bench Contributors**, **Role Players**, and **Secondary Scorers**. Then, for the two highest-scoring clusters, we use their average AST to distinguish *how* they score: a cluster with both high PTS and high AST is the true dual-threat group — **Playmaking Stars** — while the cluster with high PTS but lower AST contains volume scorers who operate more off-ball — **Scorers**.
 
 ```{python}
 centroids_pos = players.groupby('cluster_num')[['PTS_per_G_std', 'AST_std']].mean()
 
-# Sort all four clusters by average PTS (low → high)
+# Sort all six clusters by average PTS (low → high)
 sorted_by_pts = centroids_pos.sort_values('PTS_per_G_std')
 indices = sorted_by_pts.index.tolist()
 
-# Bottom two clusters: Specialists and Role Players
+# Bottom four clusters by scoring
 label_map = {
     indices[0]: 'Specialists',
-    indices[1]: 'Role Players',
+    indices[1]: 'Bench Contributors',
+    indices[2]: 'Role Players',
+    indices[3]: 'Secondary Scorers',
 }
 
 # Top two clusters: distinguish by AST — higher AST → Playmaking Stars
-top_two = centroids_pos.loc[indices[2:]]
+top_two = centroids_pos.loc[indices[4:]]
 high_ast_idx = top_two['AST_std'].idxmax()
 low_ast_idx  = top_two['AST_std'].idxmin()
 label_map[high_ast_idx] = 'Playmaking Stars'
@@ -289,14 +265,19 @@ players['cluster'] = players['cluster_num'].map(label_map)
 
 ```{python}
 color_map = {
-    'Playmaking Stars': 'red',
-    'Scorers':          'darkorange',
-    'Role Players':     'seagreen',
-    'Specialists':      'dodgerblue'
+    'Playmaking Stars':   'red',
+    'Scorers':            'darkorange',
+    'Secondary Scorers':  'gold',
+    'Role Players':       'seagreen',
+    'Bench Contributors': 'steelblue',
+    'Specialists':        'dodgerblue'
 }
 
+cluster_order = ['Playmaking Stars', 'Scorers', 'Secondary Scorers',
+                 'Role Players', 'Bench Contributors', 'Specialists']
+
 fig, ax = plt.subplots(figsize=(10, 7))
-for cluster in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
+for cluster in cluster_order:
     group = players[players['cluster'] == cluster]
     ax.scatter(group['AST'], group['PTS_per_G'], c=color_map[cluster],
                label=cluster, alpha=0.7, s=50)
@@ -309,18 +290,18 @@ plt.tight_layout()
 plt.show()
 ```
 
-Four distinct groups are visible. The red Playmaking Stars sit furthest to the upper-right — high scoring *and* high assists. Orange Scorers are high on the Y-axis (PTS) but spread more to the left (fewer assists). Green Role Players are a mid-tier group. Blue Specialists cluster in the lower-left with the fewest minutes and lowest production. Notice that the clusters run roughly along a diagonal from lower-left to upper-right — this is the key pattern in the data: scoring and playmaking ability tend to move together.
+Six distinct groups are visible. The red Playmaking Stars sit furthest to the upper-right — high scoring *and* high assists. Orange Scorers are high on the Y-axis (PTS) but spread more to the left (fewer assists). Gold Secondary Scorers form a mid-to-upper tier with moderate-to-good scoring. Green Role Players are rotation contributors with moderate production. Steel-blue Bench Contributors sit lower on both axes. Blue Specialists cluster in the lower-left with the fewest minutes and lowest production. Notice that the clusters run roughly along a diagonal from lower-left to upper-right — this is the key pattern in the data: scoring and playmaking ability tend to move together.
 
 ---
 
 ## Section 5 — Do the Clusters Make Sense?
 
-Now that the model has run, the most important question is: **do the clusters pass the smell test?** We should see recognizable primary creators in the Playmaking Stars cluster, volume scorers in Scorers, rotation contributors in Role Players, and bench players in Specialists.
+Now that the model has run, the most important question is: **do the clusters pass the smell test?** We should see recognizable primary creators in the Playmaking Stars cluster, volume scorers in Scorers, solid secondary options in Secondary Scorers, rotation contributors in Role Players, limited-role contributors in Bench Contributors, and deep bench players in Specialists.
 
 ### Top players per cluster
 
 ```{python}
-for label in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
+for label in cluster_order:
     top = (players[players['cluster'] == label]
            .sort_values('PTS_per_G', ascending=False)
            [['player', 'PTS_per_G', 'AST', 'MP']]
@@ -348,11 +329,15 @@ The numbers and the names should reinforce each other:
 
 - **Scorers** — High PTS like the Playmaking Stars, but with notably lower AST. Volume scorers who operate off the ball, in isolation, or in systems that run through someone else. The geometry is telling: these players are high on the Y-axis but shifted left compared to Playmaking Stars.
 
-- **Role Players** — Middle-tier contributors with moderate scoring and assists. Capable rotation players who play meaningful minutes but are not primary offensive options. This is the largest non-Specialist group.
+- **Secondary Scorers** — Solid contributors with above-average PTS but well below the top tier. Capable offensive options who serve as a team's third or fourth scoring option.
 
-- **Specialists** — Low scoring and low assists. The largest cluster by far — most NBA players are bench contributors with limited offensive opportunity. Low numbers here reflect limited *role*, not necessarily limited *ability*.
+- **Role Players** — Middle-tier contributors with moderate scoring and assists. Capable rotation players who play meaningful minutes but are not primary offensive options.
 
-**A key observation:** The four clusters run roughly along a diagonal in PTS × AST space — from low/low (Specialists) to high/high (Playmaking Stars). There is no natural cluster of "high assists, low scoring" players, which would represent a pure pass-first point guard archetype. This tells us something real about the NBA: players who are great playmakers tend *also* to be good scorers. A pure distributor who doesn't score is rare enough that they don't form their own cluster.
+- **Bench Contributors** — Below-average production on both axes. Players with defined but limited roles, typically used in specific matchups or to provide rest for starters.
+
+- **Specialists** — Low scoring and low assists. The largest cluster — most NBA players are deep bench contributors with limited offensive opportunity. Low numbers here reflect limited *role*, not necessarily limited *ability*.
+
+**A key observation:** The six clusters run roughly along a diagonal in PTS × AST space — from low/low (Specialists) to high/high (Playmaking Stars). There is no natural cluster of "high assists, low scoring" players, which would represent a pure pass-first point guard archetype. This tells us something real about the NBA: players who are great playmakers tend *also* to be good scorers. A pure distributor who doesn't score is rare enough that they don't form their own cluster.
 
 **An important limitation:** Big men who score but rarely assist — DeAndre Jordan, Clint Capela — appear in the Specialists or Role Players cluster even if they are crucial starters. Assists are a point guard's currency. A center who grabs 14 rebounds and protects the rim provides enormous value that this two-variable model completely misses. This is a worthwhile discussion: *what do our features actually capture, and what do they miss?*
 
