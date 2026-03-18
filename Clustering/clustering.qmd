@@ -223,13 +223,63 @@ K-Means is an iterative refinement on top of whatever initial cluster assignment
 
 K-Means can be sensitive to where the centroids start. Instead of random initialization, we **seed K-Means with the HCA centroids**. HCA already found a reasonable grouping; K-Means then refines it. This gives us stable, reproducible results.
 
+### Choosing k — The Elbow Method
+
+K-Means requires us to specify k upfront. To choose a reasonable value, we fit the model for a range of k values and track the **within-cluster sum of squares (WCSS)**: the total squared distance from every player to their cluster's centroid. Smaller WCSS means tighter, more cohesive clusters.
+
+As k increases, WCSS always decreases — in the extreme, every player is their own cluster and WCSS is zero. So we're not looking for the minimum; we're looking for the point of **diminishing returns**, where adding another cluster stops meaningfully tightening the groups. This bend in the curve is called the **elbow**.
+
+```{python}
+wcss = []
+k_range = range(1, 11)
+for k in k_range:
+    km = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
+    km.fit(players[['PTS_per_G_std', 'AST_std']])
+    wcss.append(km.inertia_)
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.plot(k_range, wcss, marker='o', color='dodgerblue')
+ax.set_xlabel('Number of clusters (k)')
+ax.set_ylabel('Within-Cluster Sum of Squares')
+ax.set_title('Elbow Method for Choosing k')
+plt.tight_layout()
+plt.show()
+```
+
+The curve bends noticeably around k = 4–6, after which additional clusters provide only marginal improvement. We'll proceed with **k = 6** to capture finer distinctions in player roles.
+
 ### Fitting K-Means
 
 ```{python}
-kmeans_fit = KMeans(n_clusters=num_clusters, init='k-means++', n_init=10, random_state=42)
+kmeans_fit = KMeans(
+  n_clusters=6, 
+  init='k-means++', 
+  n_init=10, 
+  random_state=42
+)
 kmeans_fit.fit(players[['PTS_per_G_std', 'AST_std']])
 players['cluster_num'] = kmeans_fit.labels_
 ```
+
+### Exploring the raw clusters
+
+Before assigning meaningful labels, let's plot the clusters using their raw numeric IDs. This lets us see what the algorithm actually found — and reason about what each group might represent.
+
+```{python}
+fig, ax = plt.subplots(figsize=(10, 7))
+for num in sorted(players['cluster_num'].unique()):
+    group = players[players['cluster_num'] == num]
+    ax.scatter(group['AST'], group['PTS_per_G'], label=f'Cluster {num}', alpha=0.7, s=50)
+
+ax.set_xlabel('Assists Per Game')
+ax.set_ylabel('Points Per Game')
+ax.set_title('K-Means Clusters (raw numeric labels)')
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+Looking at the plot, we can begin to reason about what each cluster represents. Clusters in the upper-right have high points *and* high assists — likely primary creators. Clusters along the upper edge but shifted left are scorers who don't distribute much. Clusters in the lower-left are bench contributors with limited offensive roles.
 
 ### Assigning readable labels
 
