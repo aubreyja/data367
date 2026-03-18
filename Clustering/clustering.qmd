@@ -19,7 +19,7 @@ from scipy.cluster.hierarchy import linkage, fcluster, dendrogram
 from sklearn.cluster import KMeans
 ```
 
-## Section 1 — Why Clustering?
+## Introduction to Clustering
 
 So far in this course we have covered two major families of supervised learning:
 
@@ -28,43 +28,33 @@ So far in this course we have covered two major families of supervised learning:
 
 Both require a label. Someone had to write down the points scored; someone had to record the win or loss. But what if the categories themselves don't exist yet?
 
-**Clustering** is *unsupervised* learning: we let the algorithm discover natural groupings in the data without any pre-assigned labels. Instead of telling the model "this player is elite," we give it statistics and ask, "which players look like each other?"
+**Clustering** is *unsupervised* learning: the algorithm discovers natural groupings without any pre-assigned labels. This helps us discover sub-groups and "archetypes." Clustering finds these groupings for us by identifying players whose statistics cluster together in space.
 
-**The hook:** What *type* of player is LeBron James? There is no column in the dataset that says "elite." There is no label "superstar" vs "role player" vs "reserve." Clustering finds those groupings for us by identifying players whose statistics cluster together in space.
+**Similarity.** Two players are "similar" if their statistics are close together. We measure closeness with _Euclidean distance_ (there are other metrics, but this is the simplest): 
 
----
+$$d(x, y) = \sqrt{\sum_{i=1}^n (x_i - y_i)^2}.$$
 
-**Similarity.** Two players are "similar" if their statistics are close together. We measure closeness with **Euclidean distance**. For two players described by points per game and assists, the distance between them is:
-
+For two players $P$ and $Q$ described by points per game and assists, the distance between them is:
 $$d(P, Q) = \sqrt{(\text{PTS}_P - \text{PTS}_Q)^2 + (\text{AST}_P - \text{AST}_Q)^2}$$
 
-**Scaling.** There's a catch. Points per game ranges from near 0 to over 30. Assists per game ranges from near 0 to about 10. Without adjustment, the points dimension *dominates* the distance calculation — a one-unit difference in scoring counts for far more than a one-unit difference in assists, even though assists might be just as important. To fix this, we **scale** each feature so they contribute equally to distance.
+**Scaling.** Without scaling, one dimension may be more influential than another. For example,   
+
+- The number of points per game ranges from near 0 to over 30,  
+- The number of assists per game ranges from near 0 to about 10.  
+
+Therefore, without adjustment, points are more influential than assists. A one-unit difference in scoring counts for far more than a one-unit difference in assists. To fix this, we scale each feature so they contribute equally to distance.
 
 ---
 
 ## Data Description
 
-Every basketball loving fan at some point in their life will have the discussion, which of two players is better. As a child, my friends and I would often argue over Jason Kidd or Steve Nash, D-Wade or Lebron, or Kobe or Allen Iverson (AI). To this day, I have friends who say the 2001-2002 season AI was a better scorer than Kobe and I continue to respond with it wasn't as close as you think. AI scored 31.4 points per game in the 01-02 season and Kobe scored 25.2 points per a game. Six points is a significant difference in points per game but once you take into account that AI played 43.7 minutes per game and Kobe played 38.3 minutes, simple math tells you that Kobe scored .66 points per minute and AI scored .71 points per minute. That means if both played forty minute games at their season scoring rate Kobe would have 26.4 points and AI would have 28.4 points. A measly two-point difference. Add in the fact that Kobe shot 46.9 percent from the floor and AI shot 39.8 percent from the floor, the statement becomes said with a little less confidence.
-
 In this lesson we use the **2017-18 NBA per-game dataset** to find natural player archetypes using only two offensive statistics: **points per game** (`PTS_per_G`) and **assists per game** (`AST`). By limiting ourselves to two dimensions we can visualize every clustering decision on a single 2-D scatter plot.
 
 ```{python}
-per_36_2019_all = pd.read_csv("data/per_36_min_2019.csv")
-per_36_2018_all = pd.read_csv("data/per_36_min_2018.csv")
-per_game_2019_all = pd.read_csv("data/per_game_2019.csv")
+# Load Data
 per_game_2018_all = pd.read_csv("data/per_game_2018.csv")
-```
-
-```{python}
-cols_36 = ["player", "age", "G", "GS", "MP", "FG_per", "3P_per", "2P_per",
-           "FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_36", "team"]
-
 cols_pg = ["player", "age", "G", "GS", "MP", "FG_per", "3P_per", "2P_per",
            "FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_G", "team"]
-
-per_36_2019 = per_36_2019_all[cols_36].copy()
-per_36_2018 = per_36_2018_all[cols_36].copy()
-per_game_2019 = per_game_2019_all[cols_pg].copy()
 per_game_2018 = per_game_2018_all[cols_pg].copy()
 ```
 
@@ -86,7 +76,7 @@ per_game_2018 = per_game_2018_all[cols_pg].copy()
 | STL | Steals |
 | BLK | Blocks |
 | TOV | Turnovers |
-| PTS_per_G / PTS_per_36 | Points per game or points per 36 minutes |
+| PTS_per_G | Points per game |
 | team | Team abbreviation |
 
 ```{python}
@@ -165,7 +155,7 @@ After scaling, a player who scores 0 points in 10 minutes per game and a player 
 
 ### Removing garbage-time players
 
-Before clustering, we need to clean the data. The per-36-minute data revealed a player who would "score 108 points per 36 minutes" — because they scored 3 points in 1 minute of total play during the entire season. Rare, short appearances inflate per-game stats in misleading ways.
+Before clustering, we need to clean the data. Some players appear in the dataset after playing only a handful of minutes across the entire season — because they scored 3 points in 1 minute of total play, inflating their per-game numbers in misleading ways.
 
 To address this, we remove:
 
@@ -175,8 +165,6 @@ To address this, we remove:
 ```{python}
 rm_ind = (per_game_2018['MP'] > per_game_2018['MP'].quantile(0.10)) | (per_game_2018['G'] > 10)
 per_game_2018 = per_game_2018[rm_ind].reset_index(drop=True)
-per_36_2018   = per_36_2018[rm_ind].reset_index(drop=True)
-
 print(f"Players remaining: {len(per_game_2018)}")
 ```
 
@@ -197,7 +185,7 @@ Hierarchical Agglomerative Clustering (HCA) starts with every player in their ow
 ```{python}
 d_matrix  = pdist(per_game_2018[['PTS_per_G_std', 'AST_std']], metric='euclidean')
 hclust_fit = linkage(d_matrix, method='ward')
-per_game_2018['mem3'] = fcluster(hclust_fit, t=3, criterion='maxclust')
+per_game_2018['mem4'] = fcluster(hclust_fit, t=4, criterion='maxclust')
 ```
 
 ### Reading the dendrogram
@@ -216,9 +204,9 @@ dendrogram(
     ax=ax
 )
 
-# Draw a horizontal cut line at the height that gives us 3 clusters
-cut_height = (hclust_fit[-3, 2] + hclust_fit[-2, 2]) / 2
-ax.axhline(y=cut_height, color='red', linestyle='--', linewidth=1.5, label=f'Cut → 3 clusters')
+# Draw a horizontal cut line at the height that gives us 4 clusters
+cut_height = (hclust_fit[-4, 2] + hclust_fit[-3, 2]) / 2
+ax.axhline(y=cut_height, color='red', linestyle='--', linewidth=1.5, label=f'Cut → 4 clusters')
 
 ax.set_title("Dendrogram — Where Should We Cut?")
 ax.set_xlabel("Player groups (each leaf may represent multiple players)")
@@ -228,9 +216,9 @@ plt.tight_layout()
 plt.show()
 ```
 
-**How to read this:** Start at the bottom and work upward. Each join represents two groups being merged. The dashed red line marks our chosen cut point. Any vertical line that crosses that line represents a distinct cluster. We see **three** long vertical lines below the cut — meaning there are three groups that are genuinely well-separated before the algorithm is forced to merge them.
+**How to read this:** Start at the bottom and work upward. Each join represents two groups being merged. The dashed red line marks our chosen cut point. Any vertical line that crosses that line represents a distinct cluster. We see **four** long vertical lines below the cut — meaning there are four groups that are genuinely well-separated before the algorithm is forced to merge them.
 
-Based on this, and because three clusters map naturally to the NBA talent structure (star, rotation player, reserve), we proceed with **k = 3**.
+Based on this, and because four clusters let us distinguish *how* players contribute offensively — not just *how much* — we proceed with **k = 4**. This gives us richer archetypes: Playmaking Stars, Scorers, Role Players, and Specialists.
 
 ---
 
@@ -249,7 +237,7 @@ K-Means can be sensitive to where the centroids start. Instead of random initial
 ### Starting from HCA centroids
 
 ```{python}
-centroids_2018 = per_game_2018.groupby('mem3')[['PTS_per_G_std', 'AST_std']].mean()
+centroids_2018 = per_game_2018.groupby('mem4')[['PTS_per_G_std', 'AST_std']].mean()
 print("HCA centroids (scaled):")
 print(centroids_2018)
 ```
@@ -257,30 +245,51 @@ print(centroids_2018)
 ### Fitting K-Means
 
 ```{python}
-kmeans_fit = KMeans(n_clusters=3, init=centroids_2018.values, n_init=1, random_state=42)
+kmeans_fit = KMeans(n_clusters=4, init=centroids_2018.values, n_init=1, random_state=42)
 kmeans_fit.fit(per_game_2018[['PTS_per_G_std', 'AST_std']])
-per_game_2018['kmem3_num'] = kmeans_fit.labels_
+per_game_2018['kmem4_num'] = kmeans_fit.labels_
 ```
 
 ### Assigning readable labels
 
-We sort the three clusters by their mean `PTS_per_G` and label them from lowest to highest: **reserve**, **role**, **elite**.
+Rather than sorting by PTS alone, we use the **centroid position in 2D PTS × AST space** to assign labels. We first rank clusters by average PTS, giving us a low → high scoring spectrum. Then, for the two highest-scoring clusters, we use their average AST to distinguish *how* they score: a cluster with both high PTS and high AST is the true dual-threat group — **Playmaking Stars** — while the cluster with high PTS but lower AST contains volume scorers who operate more off-ball — **Scorers**. The two lower-scoring clusters become **Role Players** and **Specialists**.
 
 ```{python}
-cluster_pts_mean = per_game_2018.groupby('kmem3_num')['PTS_per_G_std'].mean()
-sorted_clusters  = cluster_pts_mean.sort_values().index.tolist()
-label_map = {sorted_clusters[0]: 'reserve', sorted_clusters[1]: 'role', sorted_clusters[2]: 'elite'}
-per_game_2018['kmem3'] = per_game_2018['kmem3_num'].map(label_map)
+centroids_pos = per_game_2018.groupby('kmem4_num')[['PTS_per_G_std', 'AST_std']].mean()
+
+# Sort all four clusters by average PTS (low → high)
+sorted_by_pts = centroids_pos.sort_values('PTS_per_G_std')
+indices = sorted_by_pts.index.tolist()
+
+# Bottom two clusters: Specialists and Role Players
+label_map = {
+    indices[0]: 'Specialists',
+    indices[1]: 'Role Players',
+}
+
+# Top two clusters: distinguish by AST — higher AST → Playmaking Stars
+top_two = centroids_pos.loc[indices[2:]]
+high_ast_idx = top_two['AST_std'].idxmax()
+low_ast_idx  = top_two['AST_std'].idxmin()
+label_map[high_ast_idx] = 'Playmaking Stars'
+label_map[low_ast_idx]  = 'Scorers'
+
+per_game_2018['kmem4'] = per_game_2018['kmem4_num'].map(label_map)
 ```
 
 ### Plotting the archetypes
 
 ```{python}
-color_map = {'elite': 'red', 'role': 'seagreen', 'reserve': 'dodgerblue'}
+color_map = {
+    'Playmaking Stars': 'red',
+    'Scorers':          'darkorange',
+    'Role Players':     'seagreen',
+    'Specialists':      'dodgerblue'
+}
 
 fig, ax = plt.subplots(figsize=(10, 7))
-for cluster in ['elite', 'role', 'reserve']:
-    group = per_game_2018[per_game_2018['kmem3'] == cluster]
+for cluster in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
+    group = per_game_2018[per_game_2018['kmem4'] == cluster]
     ax.scatter(group['AST'], group['PTS_per_G'], c=color_map[cluster],
                label=cluster, alpha=0.7, s=50)
 
@@ -292,19 +301,19 @@ plt.tight_layout()
 plt.show()
 ```
 
-Three distinct groups are visible. The red elite players are in the upper-right (high scoring *and/or* high assists). The blue reserves are in the lower-left. The green role players fill in the middle.
+Four distinct groups are visible. The red Playmaking Stars sit furthest to the upper-right — high scoring *and* high assists. Orange Scorers are high on the Y-axis (PTS) but spread more to the left (fewer assists). Green Role Players are a mid-tier group. Blue Specialists cluster in the lower-left with the fewest minutes and lowest production. Notice that the clusters run roughly along a diagonal from lower-left to upper-right — this is the key pattern in the data: scoring and playmaking ability tend to move together.
 
 ---
 
 ## Section 5 — Do the Clusters Make Sense?
 
-Now that the model has run, the most important question is: **do the clusters pass the smell test?** We should see recognizable stars in the elite cluster, familiar rotation players in the role cluster, and deep bench players in the reserve cluster.
+Now that the model has run, the most important question is: **do the clusters pass the smell test?** We should see recognizable primary creators in the Playmaking Stars cluster, volume scorers in Scorers, rotation contributors in Role Players, and bench players in Specialists.
 
 ### Top players per cluster
 
 ```{python}
-for label in ['elite', 'role', 'reserve']:
-    top = (per_game_2018[per_game_2018['kmem3'] == label]
+for label in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
+    top = (per_game_2018[per_game_2018['kmem4'] == label]
            .sort_values('PTS_per_G', ascending=False)
            [['player', 'PTS_per_G', 'AST', 'MP']]
            .head(8))
@@ -316,7 +325,7 @@ for label in ['elite', 'role', 'reserve']:
 
 ```{python}
 summary = (per_game_2018
-           .groupby('kmem3')[['PTS_per_G', 'AST', 'MP']]
+           .groupby('kmem4')[['PTS_per_G', 'AST', 'MP']]
            .mean()
            .round(2))
 print("Mean statistics by cluster:")
@@ -327,11 +336,15 @@ print(summary)
 
 The numbers and the names should reinforce each other:
 
-- **Elite** — Stars and primary offensive options. High scoring *and/or* high assists. Think LeBron James, James Harden, Russell Westbrook. These players initiate offense and carry the scoring load.
+- **Playmaking Stars** — High PTS *and* high AST relative to all other clusters. Primary offensive creators who both score and distribute. Think LeBron James, James Harden, Russell Westbrook. What makes this group distinct is that the algorithm separated them not just because they score a lot, but because they *also* have the highest assist rates — dual-threat players who carry the offense in two ways.
 
-- **Role players** — Rotation players with moderate scoring and team-specific roles. Capable contributors, but not the first or second option. They play meaningful minutes but aren't asked to create offense independently.
+- **Scorers** — High PTS like the Playmaking Stars, but with notably lower AST. Volume scorers who operate off the ball, in isolation, or in systems that run through someone else. The geometry is telling: these players are high on the Y-axis but shifted left compared to Playmaking Stars.
 
-- **Reserves** — Deep bench players with low minutes and a limited offensive role. Low stats reflect limited opportunity, not necessarily limited ability.
+- **Role Players** — Middle-tier contributors with moderate scoring and assists. Capable rotation players who play meaningful minutes but are not primary offensive options. This is the largest non-Specialist group.
 
-**An important limitation:** Big men who score but rarely assist — think DeAndre Jordan or Clint Capela — get pulled toward the reserve or role cluster even if they are crucial contributors. Assists are a point guard's currency. A center who scores 12 points, grabs 14 rebounds, and protects the rim provides enormous value that this two-variable model misses entirely. This is a worthwhile discussion: *what do our features actually capture, and what do they miss?*
+- **Specialists** — Low scoring and low assists. The largest cluster by far — most NBA players are bench contributors with limited offensive opportunity. Low numbers here reflect limited *role*, not necessarily limited *ability*.
+
+**A key observation:** The four clusters run roughly along a diagonal in PTS × AST space — from low/low (Specialists) to high/high (Playmaking Stars). There is no natural cluster of "high assists, low scoring" players, which would represent a pure pass-first point guard archetype. This tells us something real about the NBA: players who are great playmakers tend *also* to be good scorers. A pure distributor who doesn't score is rare enough that they don't form their own cluster.
+
+**An important limitation:** Big men who score but rarely assist — DeAndre Jordan, Clint Capela — appear in the Specialists or Role Players cluster even if they are crucial starters. Assists are a point guard's currency. A center who grabs 14 rebounds and protects the rim provides enormous value that this two-variable model completely misses. This is a worthwhile discussion: *what do our features actually capture, and what do they miss?*
 
