@@ -46,16 +46,30 @@ Therefore, without adjustment, points are more influential than assists. A one-u
 
 ---
 
-## Data Description
+## Objective
+In this lesson we use the **2018 NBA per-game dataset** to find natural player archetypes using only two offensive statistics: **points per game** (`PTS_per_G`) and **assists per game** (`AST`). By limiting ourselves to two dimensions we can visualize every clustering decision on a single 2-D scatter plot.
 
-In this lesson we use the **2017-18 NBA per-game dataset** to find natural player archetypes using only two offensive statistics: **points per game** (`PTS_per_G`) and **assists per game** (`AST`). By limiting ourselves to two dimensions we can visualize every clustering decision on a single 2-D scatter plot.
+## Data Description
+We start with loading the data and doing some data exploration. 
 
 ```{python}
 # Load Data
-per_game_2018_all = pd.read_csv("data/per_game_2018.csv")
+players_all = pd.read_csv("data/per_game_2018.csv")
 cols_pg = ["player", "age", "G", "GS", "MP", "FG_per", "3P_per", "2P_per",
            "FT_per", "TRB", "AST", "STL", "BLK", "TOV", "PTS_per_G", "team"]
-per_game_2018 = per_game_2018_all[cols_pg].copy()
+players = players_all[cols_pg].copy()
+```
+
+### Data Cleaning
+Some players appear in the dataset after playing only a handful of minutes across the entire season. To address this, we remove:
+
+- Players in the **bottom 10% of minutes per game**.
+- Players who appeared in **fewer than 10 games**.
+
+```{python}
+#rm_ind = (players['MP'] > players['MP'].quantile(0.10)) | (players['G'] > 10)
+#players = players[rm_ind].reset_index(drop=True)
+#print(f"Players remaining: {len(players)}")
 ```
 
 **Description of the data:**
@@ -79,27 +93,17 @@ per_game_2018 = per_game_2018_all[cols_pg].copy()
 | PTS_per_G | Points per game |
 | team | Team abbreviation |
 
-```{python}
-# Distribution of minutes played — who's actually getting real run?
-plt.hist(per_game_2018["MP"], bins=20, color="dodgerblue", edgecolor="black")
-plt.xlabel("Minutes Per Game")
-plt.ylabel("Count")
-plt.title("Distribution of Minutes Played (2018)")
-plt.tight_layout()
-plt.show()
-```
-
 ---
 
-## Section 2 — Similarity and Scaling
+## Similarity and Scaling
 
 ### Comparing two players
 
-Before we build any model, let's make the distance concept concrete. Consider LeBron James and Danny Green — both on the Cleveland Cavaliers in 2018, but clearly very different players. Let's look at their `PTS_per_G` and `AST` and compute the Euclidean distance between them.
+Before we build any model, let's make the distance concept concrete. Consider LeBron James and Danny Green. Both were on the Cleveland Cavaliers in 2018, but clearly very different players. Let's look at their `PTS_per_G` and `AST` and compute the Euclidean distance between them.
 
 ```{python}
-lebron = per_game_2018[per_game_2018['player'] == 'LeBron James'][['player', 'PTS_per_G', 'AST']]
-danny  = per_game_2018[per_game_2018['player'] == 'Danny Green'][['player', 'PTS_per_G', 'AST']]
+lebron = players[players['player'] == 'LeBron James'][['player', 'PTS_per_G', 'AST']]
+danny  = players[players['player'] == 'Danny Green'][['player', 'PTS_per_G', 'AST']]
 
 print("LeBron James:")
 print(lebron.to_string(index=False))
@@ -121,15 +125,15 @@ Notice that the PTS difference is much larger than the AST difference in absolut
 The plot below makes the problem visual. On the left, the raw scatter shows how the Y-axis (PTS_per_G) has a much larger range than the X-axis (AST), compressing horizontal variation. On the right, after min-max scaling both features to [0, 1], the axes are equal and every feature contributes fairly.
 
 ```{python}
-pts_max = per_game_2018['PTS_per_G'].max()
-ast_max = per_game_2018['AST'].max()
-pts_scaled = per_game_2018['PTS_per_G'] / pts_max
-ast_scaled = per_game_2018['AST'] / ast_max
+pts_max = players['PTS_per_G'].max()
+ast_max = players['AST'].max()
+pts_scaled = players['PTS_per_G'] / pts_max
+ast_scaled = players['AST'] / ast_max
 
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
 
 # Left — raw
-axes[0].scatter(per_game_2018['AST'], per_game_2018['PTS_per_G'],
+axes[0].scatter(players['AST'], players['PTS_per_G'],
                 alpha=0.5, color='dodgerblue', s=20)
 axes[0].set_xlabel('AST (raw)')
 axes[0].set_ylabel('PTS_per_G (raw)')
@@ -151,31 +155,17 @@ After scaling, a player who scores 0 points in 10 minutes per game and a player 
 
 ---
 
-## Section 3 — How Many Clusters? HCA and the Dendrogram
+## Identifying Number of Clusters
 
-### Removing garbage-time players
 
-Before clustering, we need to clean the data. Some players appear in the dataset after playing only a handful of minutes across the entire season — because they scored 3 points in 1 minute of total play, inflating their per-game numbers in misleading ways.
-
-To address this, we remove:
-
-- Players in the **bottom 10% of minutes per game** (in 2017-18, anyone averaging fewer than ~5.24 min/game).
-- Players who appeared in **fewer than 10 games** — too small a sample to characterize a player's true ability.
-
-```{python}
-rm_ind = (per_game_2018['MP'] > per_game_2018['MP'].quantile(0.10)) | (per_game_2018['G'] > 10)
-per_game_2018 = per_game_2018[rm_ind].reset_index(drop=True)
-print(f"Players remaining: {len(per_game_2018)}")
-```
-
-### Min-max scaling PTS and AST
+### Min/Max Scaling
 
 We divide each column by its maximum so all values land in [0, 1]:
 
 ```{python}
-per_game_2018['PTS_per_G_std'] = per_game_2018['PTS_per_G'] / per_game_2018['PTS_per_G'].max()
-per_game_2018['AST_std']       = per_game_2018['AST']       / per_game_2018['AST'].max()
-per_game_2018['TRB_std']       = per_game_2018['TRB']       / per_game_2018['TRB'].max()
+players['PTS_per_G_std'] = players['PTS_per_G'] / players['PTS_per_G'].max()
+players['AST_std']       = players['AST']       / players['AST'].max()
+players['TRB_std']       = players['TRB']       / players['TRB'].max()
 ```
 
 ### Fitting HCA
@@ -183,9 +173,15 @@ per_game_2018['TRB_std']       = per_game_2018['TRB']       / per_game_2018['TRB
 Hierarchical Agglomerative Clustering (HCA) starts with every player in their own cluster and repeatedly merges the two closest clusters until only one remains. We use **Ward's linkage**, which merges clusters in a way that minimizes the increase in total within-cluster variance — it tends to produce compact, evenly-sized clusters.
 
 ```{python}
-d_matrix  = pdist(per_game_2018[['PTS_per_G_std', 'AST_std']], metric='euclidean')
+# Create Distance Matrix: distance from every point to every other point
+d_matrix  = pdist(players[['PTS_per_G_std', 'AST_std']], metric='euclidean')
+
+# Apply Hierarchical Clustering
 hclust_fit = linkage(d_matrix, method='ward')
-per_game_2018['mem4'] = fcluster(hclust_fit, t=4, criterion='maxclust')
+
+# Assign Clusters 
+num_clusters = 4
+players['cluster'] = fcluster(hclust_fit, t=num_clusters, criterion='maxclust')
 ```
 
 ### Reading the dendrogram
@@ -193,22 +189,15 @@ per_game_2018['mem4'] = fcluster(hclust_fit, t=4, criterion='maxclust')
 A **dendrogram** is a tree diagram that records every merge HCA made. The height of each horizontal bar represents how dissimilar the two groups were when they merged. Tall vertical lines before the cut point mean the algorithm is combining groups that are genuinely far apart — those are the natural boundaries we want to preserve.
 
 ```{python}
-fig, ax = plt.subplots(figsize=(12, 5))
+fig, ax = plt.subplots(figsize=(8, 5))
 
 dendrogram(
     hclust_fit,
     truncate_mode='lastp',   # show only the last p merges
-    p=20,                    # keeps the plot readable
-    leaf_rotation=45,
-    leaf_font_size=9,
     ax=ax
 )
 
-# Draw a horizontal cut line at the height that gives us 4 clusters
-cut_height = (hclust_fit[-4, 2] + hclust_fit[-3, 2]) / 2
-ax.axhline(y=cut_height, color='red', linestyle='--', linewidth=1.5, label=f'Cut → 4 clusters')
-
-ax.set_title("Dendrogram — Where Should We Cut?")
+ax.set_title("Dendrogram")
 ax.set_xlabel("Player groups (each leaf may represent multiple players)")
 ax.set_ylabel("Ward linkage distance")
 ax.legend()
@@ -234,20 +223,12 @@ K-Means is an iterative refinement on top of whatever initial cluster assignment
 
 K-Means can be sensitive to where the centroids start. Instead of random initialization, we **seed K-Means with the HCA centroids**. HCA already found a reasonable grouping; K-Means then refines it. This gives us stable, reproducible results.
 
-### Starting from HCA centroids
-
-```{python}
-centroids_2018 = per_game_2018.groupby('mem4')[['PTS_per_G_std', 'AST_std']].mean()
-print("HCA centroids (scaled):")
-print(centroids_2018)
-```
-
 ### Fitting K-Means
 
 ```{python}
-kmeans_fit = KMeans(n_clusters=4, init=centroids_2018.values, n_init=1, random_state=42)
-kmeans_fit.fit(per_game_2018[['PTS_per_G_std', 'AST_std']])
-per_game_2018['kmem4_num'] = kmeans_fit.labels_
+kmeans_fit = KMeans(n_clusters=num_clusters, init='k-means++', n_init=10, random_state=42)
+kmeans_fit.fit(players[['PTS_per_G_std', 'AST_std']])
+players['cluster_num'] = kmeans_fit.labels_
 ```
 
 ### Assigning readable labels
@@ -255,7 +236,7 @@ per_game_2018['kmem4_num'] = kmeans_fit.labels_
 Rather than sorting by PTS alone, we use the **centroid position in 2D PTS × AST space** to assign labels. We first rank clusters by average PTS, giving us a low → high scoring spectrum. Then, for the two highest-scoring clusters, we use their average AST to distinguish *how* they score: a cluster with both high PTS and high AST is the true dual-threat group — **Playmaking Stars** — while the cluster with high PTS but lower AST contains volume scorers who operate more off-ball — **Scorers**. The two lower-scoring clusters become **Role Players** and **Specialists**.
 
 ```{python}
-centroids_pos = per_game_2018.groupby('kmem4_num')[['PTS_per_G_std', 'AST_std']].mean()
+centroids_pos = players.groupby('cluster_num')[['PTS_per_G_std', 'AST_std']].mean()
 
 # Sort all four clusters by average PTS (low → high)
 sorted_by_pts = centroids_pos.sort_values('PTS_per_G_std')
@@ -274,7 +255,7 @@ low_ast_idx  = top_two['AST_std'].idxmin()
 label_map[high_ast_idx] = 'Playmaking Stars'
 label_map[low_ast_idx]  = 'Scorers'
 
-per_game_2018['kmem4'] = per_game_2018['kmem4_num'].map(label_map)
+players['cluster'] = players['cluster_num'].map(label_map)
 ```
 
 ### Plotting the archetypes
@@ -289,7 +270,7 @@ color_map = {
 
 fig, ax = plt.subplots(figsize=(10, 7))
 for cluster in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
-    group = per_game_2018[per_game_2018['kmem4'] == cluster]
+    group = players[players['cluster'] == cluster]
     ax.scatter(group['AST'], group['PTS_per_G'], c=color_map[cluster],
                label=cluster, alpha=0.7, s=50)
 
@@ -313,7 +294,7 @@ Now that the model has run, the most important question is: **do the clusters pa
 
 ```{python}
 for label in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
-    top = (per_game_2018[per_game_2018['kmem4'] == label]
+    top = (players[players['cluster'] == label]
            .sort_values('PTS_per_G', ascending=False)
            [['player', 'PTS_per_G', 'AST', 'MP']]
            .head(8))
@@ -324,8 +305,8 @@ for label in ['Playmaking Stars', 'Scorers', 'Role Players', 'Specialists']:
 ### Cluster summary statistics
 
 ```{python}
-summary = (per_game_2018
-           .groupby('kmem4')[['PTS_per_G', 'AST', 'MP']]
+summary = (players
+           .groupby('cluster')[['PTS_per_G', 'AST', 'MP']]
            .mean()
            .round(2))
 print("Mean statistics by cluster:")
