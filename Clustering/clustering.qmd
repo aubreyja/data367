@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist
 from scipy.cluster.hierarchy import linkage, fcluster, dendrogram
 from sklearn.cluster import KMeans
+import plotly.express as px
 ```
 
 ## Introduction to Clustering
@@ -160,58 +161,17 @@ After scaling, a player who scores 0 points in 10 minutes per game and a player 
 
 ### Min/Max Scaling
 
-We divide each column by its maximum so all values land in [0, 1]:
+We divide each column by its maximum so all values land in [0, 1]. When doing this, it's important to look out for outliers. 
 
 ```{python}
 players['PTS_per_G_std'] = players['PTS_per_G'] / players['PTS_per_G'].max()
-players['AST_std']       = players['AST']       / players['AST'].max()
-players['TRB_std']       = players['TRB']       / players['TRB'].max()
+players['AST_std'] = players['AST'] / players['AST'].max()
+players['TRB_std'] = players['TRB'] / players['TRB'].max()
 ```
-
-### Fitting HCA
-
-Hierarchical Agglomerative Clustering (HCA) starts with every player in their own cluster and repeatedly merges the two closest clusters until only one remains. We use **Ward's linkage**, which merges clusters in a way that minimizes the increase in total within-cluster variance — it tends to produce compact, evenly-sized clusters.
-
-```{python}
-# Create Distance Matrix: distance from every point to every other point
-d_matrix  = pdist(players[['PTS_per_G_std', 'AST_std']], metric='euclidean')
-
-# Apply Hierarchical Clustering
-hclust_fit = linkage(d_matrix, method='ward')
-
-# Assign Clusters 
-num_clusters = 4
-players['cluster'] = fcluster(hclust_fit, t=num_clusters, criterion='maxclust')
-```
-
-### Reading the dendrogram
-
-A **dendrogram** is a tree diagram that records every merge HCA made. The height of each horizontal bar represents how dissimilar the two groups were when they merged. Tall vertical lines before the cut point mean the algorithm is combining groups that are genuinely far apart — those are the natural boundaries we want to preserve.
-
-```{python}
-fig, ax = plt.subplots(figsize=(8, 5))
-
-dendrogram(
-    hclust_fit,
-    truncate_mode='lastp',   # show only the last p merges
-    ax=ax
-)
-
-ax.set_title("Dendrogram")
-ax.set_xlabel("Player groups (each leaf may represent multiple players)")
-ax.set_ylabel("Ward linkage distance")
-ax.legend()
-plt.tight_layout()
-plt.show()
-```
-
-**How to read this:** Start at the bottom and work upward. Each join represents two groups being merged. The dashed red line marks our chosen cut point. Any vertical line that crosses that line represents a distinct cluster. We see **four** long vertical lines below the cut — meaning there are four groups that are genuinely well-separated before the algorithm is forced to merge them.
-
-Based on this, and because four clusters let us distinguish *how* players contribute offensively — not just *how much* — we proceed with **k = 4**. This gives us richer archetypes: Playmaking Stars, Scorers, Role Players, and Specialists.
 
 ---
 
-## Section 4 — K-Means Clustering
+## K-Means Clustering
 
 ### The algorithm
 
@@ -223,7 +183,7 @@ K-Means is an iterative refinement on top of whatever initial cluster assignment
 
 K-Means can be sensitive to where the centroids start. Instead of random initialization, we **seed K-Means with the HCA centroids**. HCA already found a reasonable grouping; K-Means then refines it. This gives us stable, reproducible results.
 
-### Choosing k — The Elbow Method
+### Choosing Number of Clusters — The Elbow Method
 
 K-Means requires us to specify k upfront. To choose a reasonable value, we fit the model for a range of k values and track the **within-cluster sum of squares (WCSS)**: the total squared distance from every player to their cluster's centroid. Smaller WCSS means tighter, more cohesive clusters.
 
@@ -238,11 +198,10 @@ for k in k_range:
     wcss.append(km.inertia_)
 
 fig, ax = plt.subplots(figsize=(7, 4))
-ax.plot(k_range, wcss, marker='o', color='dodgerblue')
+ax.plot(k_range, wcss, marker='o')
 ax.set_xlabel('Number of clusters (k)')
 ax.set_ylabel('Within-Cluster Sum of Squares')
 ax.set_title('Elbow Method for Choosing k')
-plt.tight_layout()
 plt.show()
 ```
 
@@ -251,6 +210,7 @@ The curve bends noticeably around k = 4–6, after which additional clusters pro
 ### Fitting K-Means
 
 ```{python}
+# Fit K-Means Clustering
 kmeans_fit = KMeans(
   n_clusters=6, 
   init='k-means++', 
@@ -258,6 +218,8 @@ kmeans_fit = KMeans(
   random_state=42
 )
 kmeans_fit.fit(players[['PTS_per_G_std', 'AST_std']])
+
+# Assign Labels
 players['cluster_num'] = kmeans_fit.labels_
 ```
 
@@ -266,17 +228,32 @@ players['cluster_num'] = kmeans_fit.labels_
 Before assigning meaningful labels, let's plot the clusters using their raw numeric IDs. This lets us see what the algorithm actually found — and reason about what each group might represent.
 
 ```{python}
-fig, ax = plt.subplots(figsize=(10, 7))
+# Plot Clusters 
 for num in sorted(players['cluster_num'].unique()):
     group = players[players['cluster_num'] == num]
-    ax.scatter(group['AST'], group['PTS_per_G'], label=f'Cluster {num}', alpha=0.7, s=50)
+    plt.scatter(
+      group['AST'], group['PTS_per_G'], 
+      label=f'Cluster {num}', alpha=0.7, s=50
+    )
 
-ax.set_xlabel('Assists Per Game')
-ax.set_ylabel('Points Per Game')
-ax.set_title('K-Means Clusters (raw numeric labels)')
-ax.legend()
-plt.tight_layout()
+plt.xlabel('Assists Per Game')
+plt.ylabel('Points Per Game')
+plt.title('K-Means Clusters')
+plt.legend()
 plt.show()
+
+```
+
+```{python}
+players['cluster_label'] = players['cluster_num'].astype(str)
+fig = px.scatter(
+    players, x='AST', y='PTS_per_G',
+    color='cluster_label',
+    hover_name='player',
+    labels={'AST': 'Assists Per Game', 'PTS_per_G': 'Points Per Game', 'cluster_label': 'Cluster'},
+    title='K-Means Clusters (interactive)'
+)
+fig.show()
 ```
 
 Looking at the plot, we can begin to reason about what each cluster represents. Clusters in the upper-right have high points *and* high assists — likely primary creators. Clusters along the upper edge but shifted left are scorers who don't distribute much. Clusters in the lower-left are bench contributors with limited offensive roles.
@@ -378,4 +355,47 @@ The numbers and the names should reinforce each other:
 **A key observation:** The four clusters run roughly along a diagonal in PTS × AST space — from low/low (Specialists) to high/high (Playmaking Stars). There is no natural cluster of "high assists, low scoring" players, which would represent a pure pass-first point guard archetype. This tells us something real about the NBA: players who are great playmakers tend *also* to be good scorers. A pure distributor who doesn't score is rare enough that they don't form their own cluster.
 
 **An important limitation:** Big men who score but rarely assist — DeAndre Jordan, Clint Capela — appear in the Specialists or Role Players cluster even if they are crucial starters. Assists are a point guard's currency. A center who grabs 14 rebounds and protects the rim provides enormous value that this two-variable model completely misses. This is a worthwhile discussion: *what do our features actually capture, and what do they miss?*
+
+--- 
+
+### Fitting HCA
+
+Hierarchical Agglomerative Clustering (HCA) starts with every player in their own cluster and repeatedly merges the two closest clusters until only one remains. We use **Ward's linkage**, which merges clusters in a way that minimizes the increase in total within-cluster variance — it tends to produce compact, evenly-sized clusters.
+
+```{python}
+# Create Distance Matrix: distance from every point to every other point
+d_matrix  = pdist(players[['PTS_per_G_std', 'AST_std']], metric='euclidean')
+
+# Apply Hierarchical Clustering
+hclust_fit = linkage(d_matrix, method='ward')
+
+# Assign Clusters 
+num_clusters = 4
+players['cluster'] = fcluster(hclust_fit, t=num_clusters, criterion='maxclust')
+```
+
+### Reading the dendrogram
+
+A **dendrogram** is a tree diagram that records every merge HCA made. The height of each horizontal bar represents how dissimilar the two groups were when they merged. Tall vertical lines before the cut point mean the algorithm is combining groups that are genuinely far apart — those are the natural boundaries we want to preserve.
+
+```{python}
+fig, ax = plt.subplots(figsize=(8, 5))
+
+dendrogram(
+    hclust_fit,
+    truncate_mode='lastp',   # show only the last p merges
+    ax=ax
+)
+
+ax.set_title("Dendrogram")
+ax.set_xlabel("Player groups (each leaf may represent multiple players)")
+ax.set_ylabel("Ward linkage distance")
+ax.legend()
+plt.tight_layout()
+plt.show()
+```
+
+**How to read this:** Start at the bottom and work upward. Each join represents two groups being merged. The dashed red line marks our chosen cut point. Any vertical line that crosses that line represents a distinct cluster. We see **four** long vertical lines below the cut — meaning there are four groups that are genuinely well-separated before the algorithm is forced to merge them.
+
+Based on this, and because four clusters let us distinguish *how* players contribute offensively — not just *how much* — we proceed with **k = 4**. This gives us richer archetypes: Playmaking Stars, Scorers, Role Players, and Specialists.
 
