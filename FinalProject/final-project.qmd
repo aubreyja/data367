@@ -109,7 +109,7 @@ The Final Results Presentation is your team's public-facing deliverable and the 
 
 Presentations will be scheduled across the final two weeks of class, including the final exam period (May 12, 3:30–5:30pm). Your team's specific slot will be announced.
 
-Commit your presentation file to your group GitHub Classroom repository before your scheduled presentation time.
+Commit your presentation file to your group GitHub Classroom repository by Friday May 1 at 11:59pm.
 
 ### Required Content
 
@@ -185,5 +185,5 @@ All submissions are made by committing to a GitHub Classroom repository. Make su
 |------|-------------|------------|---------|----------|
 | Team Sport Presentation | Group | Group repo | `.qmd` presentation | Fri Apr 2 at 11:59pm |
 | Final Results Paper | Group | Group repo | `.qmd` + data files | Wed May 6 at 11:59pm |
-| Final Results Presentation | Group | Group repo | Presentation file | Before your scheduled slot |
+| Final Results Presentation | Group | Group repo | Presentation file | Friday May 1 at 11:59pm |
 | Reflection | Each student individually | **Individual repo** | `.qmd` or `.pdf` | Wed May 6 at 11:59pm |
